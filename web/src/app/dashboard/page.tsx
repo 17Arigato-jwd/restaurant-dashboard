@@ -26,7 +26,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">3 delayed (>18 mins)</p>
+            <p className="text-xs text-muted-foreground">3 delayed (&gt;18 mins)</p>
           </CardContent>
         </Card>
 
