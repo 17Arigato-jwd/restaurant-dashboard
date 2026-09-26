@@ -1,7 +1,13 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface AppState {
   // User Session
+  token: string | null;
+  role: string | null;
+  setSession: (token: string, role: string) => void;
+  logout: () => void;
+
   isManagerAuthorized: boolean;
   setManagerAuthorized: (status: boolean) => void;
 
@@ -27,45 +33,59 @@ interface AppState {
   cancelEmergencyPause: () => void;
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
-  isManagerAuthorized: false,
-  setManagerAuthorized: (status) => set({ isManagerAuthorized: status }),
+export const useAppStore = create<AppState>()(
+  persist(
+    (set, get) => ({
+      // Auth
+      token: null,
+      role: null,
+      setSession: (token, role) => set({ token, role }),
+      logout: () => set({ token: null, role: null, isManagerAuthorized: false }),
 
-  isTallyConnected: true, // Defaulting to true for visual badges
-  offlineSalesPending: 0,
-  setTallyConnection: (status) => set({ isTallyConnected: status }),
-  setOfflineSales: (count) => set({ offlineSalesPending: count }),
+      isManagerAuthorized: false,
+      setManagerAuthorized: (status) => set({ isManagerAuthorized: status }),
 
-  channels: {
-    swiggy: true,
-    zomato: true,
-    ondc: true,
-  },
-  setChannelStatus: (channel, status) => 
-    set((state) => ({
+      isTallyConnected: true,
+      offlineSalesPending: 0,
+      setTallyConnection: (status) => set({ isTallyConnected: status }),
+      setOfflineSales: (count) => set({ offlineSalesPending: count }),
+
       channels: {
-        ...state.channels,
-        [channel]: status,
-      }
-    })),
+        swiggy: true,
+        zomato: true,
+        ondc: true,
+      },
+      setChannelStatus: (channel, status) => 
+        set((state) => ({
+          channels: {
+            ...state.channels,
+            [channel]: status,
+          }
+        })),
 
-  isEmergencyPaused: false,
-  pauseTimerRemaining: 0,
-  
-  triggerEmergencyPause: () => {
-    set({ isEmergencyPaused: true, pauseTimerRemaining: 30 * 60 }); // 30 mins
-  },
-  
-  tickEmergencyPause: () => {
-    const { pauseTimerRemaining, isEmergencyPaused } = get();
-    if (isEmergencyPaused && pauseTimerRemaining > 0) {
-      set({ pauseTimerRemaining: pauseTimerRemaining - 1 });
-    } else if (pauseTimerRemaining === 0 && isEmergencyPaused) {
-      set({ isEmergencyPaused: false });
+      isEmergencyPaused: false,
+      pauseTimerRemaining: 0,
+      
+      triggerEmergencyPause: () => {
+        set({ isEmergencyPaused: true, pauseTimerRemaining: 30 * 60 });
+      },
+      
+      tickEmergencyPause: () => {
+        const { pauseTimerRemaining, isEmergencyPaused } = get();
+        if (isEmergencyPaused && pauseTimerRemaining > 0) {
+          set({ pauseTimerRemaining: pauseTimerRemaining - 1 });
+        } else if (pauseTimerRemaining === 0 && isEmergencyPaused) {
+          set({ isEmergencyPaused: false });
+        }
+      },
+      
+      cancelEmergencyPause: () => {
+        set({ isEmergencyPaused: false, pauseTimerRemaining: 0 });
+      },
+    }),
+    {
+      name: 'restaurant-storage',
+      partialize: (state) => ({ token: state.token, role: state.role }), // only persist auth
     }
-  },
-  
-  cancelEmergencyPause: () => {
-    set({ isEmergencyPaused: false, pauseTimerRemaining: 0 });
-  },
-}));
+  )
+);

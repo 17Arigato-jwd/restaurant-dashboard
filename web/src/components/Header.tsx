@@ -21,7 +21,8 @@ export function Header() {
     pauseTimerRemaining,
     triggerEmergencyPause,
     cancelEmergencyPause,
-    tickEmergencyPause
+    tickEmergencyPause,
+    logout
   } = useAppStore();
 
   const [isStockoutOpen, setIsStockoutOpen] = useState(false);
@@ -75,8 +76,8 @@ export function Header() {
     { label: "Team", action: () => router.push('/settings') },
     { label: "Support", action: () => alert('Support module coming soon!') },
     { label: "Theme Toggle", action: () => setTheme(theme === 'dark' ? 'light' : 'dark') },
-    { label: "Switch Account", action: () => router.push('/login') },
-    { label: "Sign out", action: () => router.push('/login') },
+    { label: "Switch Account", action: () => { logout(); router.push('/login'); } },
+    { label: "Sign out", action: () => { logout(); router.push('/login'); } },
   ];
 
   return (
