@@ -171,7 +171,7 @@ export default function DashboardPage() {
                   <RechartsTooltip 
                     contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                     itemStyle={{ color: 'hsl(var(--foreground))' }}
-                    formatter={(value: number) => [`₹${value.toLocaleString()}`, undefined]}
+                    formatter={(value: any) => [`₹${value.toLocaleString()}`, undefined]}
                   />
                   <Legend wrapperStyle={{ paddingTop: '20px' }} />
                   <Bar dataKey="dineIn" name="Dine-In" stackId="a" fill="#10b981" radius={[0, 0, 4, 4]} />
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                     ))}
                   </Pie>
                   <RechartsTooltip 
-                    formatter={(value: number, name: string) => [
+                    formatter={(value: any, name: any) => [
                       `₹${value.toLocaleString()}`, 
                       name === 'Swiggy' || name === 'Zomato' ? `${name} (High Commission 22%)` : name
                     ]}

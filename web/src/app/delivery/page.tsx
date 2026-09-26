@@ -6,7 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Truck, Store, TrendingUp, Calculator, Wifi, WifiOff } from "lucide-react";
+import { Truck, Store, TrendingUp, Calculator, Wifi, WifiOff, Map as MapIcon } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), {
+  ssr: false,
+  loading: () => <div className="h-[400px] w-full flex items-center justify-center bg-muted/20 animate-pulse border rounded-lg">Loading Live Map...</div>
+});
 
 export default function DeliveryManagerPage() {
   const { channels, setChannelStatus } = useAppStore();
@@ -168,7 +174,23 @@ export default function DeliveryManagerPage() {
         </CardContent>
       </Card>
       
-      <div className="flex justify-end">
+      <Card className="border-2 border-primary/20">
+        <CardHeader className="bg-primary/5 pb-4 border-b border-primary/10">
+          <CardTitle className="flex items-center text-primary">
+            <MapIcon className="w-6 h-6 mr-2" /> Live Order Fleet Tracking
+          </CardTitle>
+          <CardDescription>
+            Real-time GPS tracking of delivery partners via Aggregator APIs.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="h-[450px] w-full">
+            <DeliveryMap />
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="flex justify-end pt-4">
         <Button onClick={() => {
            // Simulate direct POS injection
            alert("Test Order Injected directly into KDS & POS from ONDC API!");

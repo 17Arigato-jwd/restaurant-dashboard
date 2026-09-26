@@ -1,13 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Store, Receipt, Printer, Bell, ShieldAlert, Save } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Store, Receipt, Printer, Bell, ShieldAlert, Save, Trash2, PowerOff } from "lucide-react";
 
 export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState("outlet");
+
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8 overflow-y-auto h-[calc(100vh-4rem)]">
       <div>
@@ -19,105 +23,205 @@ export default function SettingsPage() {
         
         {/* Navigation Sidebar for Settings */}
         <div className="space-y-1">
-          <Button variant="secondary" className="w-full justify-start"><Store className="w-4 h-4 mr-2" /> Outlet Details</Button>
-          <Button variant="ghost" className="w-full justify-start"><Receipt className="w-4 h-4 mr-2" /> Taxes & Compliance</Button>
-          <Button variant="ghost" className="w-full justify-start"><Printer className="w-4 h-4 mr-2" /> Hardware & Printers</Button>
-          <Button variant="ghost" className="w-full justify-start"><Bell className="w-4 h-4 mr-2" /> Notifications</Button>
-          <Button variant="ghost" className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"><ShieldAlert className="w-4 h-4 mr-2" /> Danger Zone</Button>
+          <Button 
+            variant={activeTab === "outlet" ? "secondary" : "ghost"} 
+            className="w-full justify-start"
+            onClick={() => setActiveTab("outlet")}
+          >
+            <Store className="w-4 h-4 mr-2" /> Outlet Details
+          </Button>
+          <Button 
+            variant={activeTab === "taxes" ? "secondary" : "ghost"} 
+            className="w-full justify-start"
+            onClick={() => setActiveTab("taxes")}
+          >
+            <Receipt className="w-4 h-4 mr-2" /> Taxes & Compliance
+          </Button>
+          <Button 
+            variant={activeTab === "hardware" ? "secondary" : "ghost"} 
+            className="w-full justify-start"
+            onClick={() => setActiveTab("hardware")}
+          >
+            <Printer className="w-4 h-4 mr-2" /> Hardware & Printers
+          </Button>
+          <Button 
+            variant={activeTab === "notifications" ? "secondary" : "ghost"} 
+            className="w-full justify-start"
+            onClick={() => setActiveTab("notifications")}
+          >
+            <Bell className="w-4 h-4 mr-2" /> Notifications
+          </Button>
+          <Button 
+            variant={activeTab === "danger" ? "secondary" : "ghost"} 
+            className={`w-full justify-start ${activeTab === 'danger' ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400' : 'text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30'}`}
+            onClick={() => setActiveTab("danger")}
+          >
+            <ShieldAlert className="w-4 h-4 mr-2" /> Danger Zone
+          </Button>
         </div>
 
         {/* Settings Content Area */}
-        <div className="md:col-span-3 space-y-8">
+        <div className="md:col-span-3">
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Outlet Information</CardTitle>
-              <CardDescription>Primary details displayed on bills and customer receipts.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Restaurant Name</Label>
-                  <Input defaultValue="Easy Restaurant SPA" />
+          {activeTab === "outlet" && (
+            <Card className="animate-in fade-in duration-300 slide-in-from-right-4">
+              <CardHeader>
+                <CardTitle>Outlet Information</CardTitle>
+                <CardDescription>Primary details displayed on bills and customer receipts.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Restaurant Name</Label>
+                    <Input defaultValue="Easy Restaurant SPA" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Concept Type</Label>
+                    <Input defaultValue="Casual Dining" />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Concept Type</Label>
-                  <Input defaultValue="Casual Dining" />
+                  <Label>Business Address</Label>
+                  <Input defaultValue="123 Food Street, Koramangala, Bangalore 560034" />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Business Address</Label>
-                <Input defaultValue="123 Food Street, Koramangala, Bangalore 560034" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Support Phone (Printed on Bill)</Label>
-                  <Input defaultValue="+91 98765 43210" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Support Phone (Printed on Bill)</Label>
+                    <Input defaultValue="+91 98765 43210" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>FSSAI License Number</Label>
+                    <Input defaultValue="11223344556677" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>FSSAI License Number</Label>
-                  <Input defaultValue="11223344556677" />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="border-t bg-muted/20 px-6 py-4">
-              <Button><Save className="w-4 h-4 mr-2" /> Save Outlet Details</Button>
-            </CardFooter>
-          </Card>
+              </CardContent>
+              <CardFooter className="border-t bg-muted/20 px-6 py-4">
+                <Button><Save className="w-4 h-4 mr-2" /> Save Outlet Details</Button>
+              </CardFooter>
+            </Card>
+          )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Taxes & Charges</CardTitle>
-              <CardDescription>Configure GST and mandatory operational charges.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-sm">Enable Standard 5% GST</h4>
-                  <p className="text-sm text-muted-foreground">Applies 2.5% CGST + 2.5% SGST without Input Tax Credit.</p>
+          {activeTab === "taxes" && (
+            <Card className="animate-in fade-in duration-300 slide-in-from-right-4">
+              <CardHeader>
+                <CardTitle>Taxes & Charges</CardTitle>
+                <CardDescription>Configure GST and mandatory operational charges.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm">Enable Standard 5% GST</h4>
+                    <p className="text-sm text-muted-foreground">Applies 2.5% CGST + 2.5% SGST without Input Tax Credit.</p>
+                  </div>
+                  <Switch defaultChecked />
                 </div>
-                <Switch defaultChecked />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-sm">Enable Service Charge</h4>
-                  <p className="text-sm text-muted-foreground">Automatically add 10% Service Charge to Dine-In bills.</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm">Enable Service Charge</h4>
+                    <p className="text-sm text-muted-foreground">Automatically add 10% Service Charge to Dine-In bills.</p>
+                  </div>
+                  <Switch />
                 </div>
-                <Switch />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-sm">Packaging Charge (Delivery)</h4>
-                  <p className="text-sm text-muted-foreground">Flat ₹20 per order for Aggregators & ONDC.</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm">Packaging Charge (Delivery)</h4>
+                    <p className="text-sm text-muted-foreground">Flat ₹20 per order for Aggregators & ONDC.</p>
+                  </div>
+                  <Switch defaultChecked />
                 </div>
-                <Switch defaultChecked />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+              <CardFooter className="border-t bg-muted/20 px-6 py-4">
+                <Button><Save className="w-4 h-4 mr-2" /> Save Tax Rules</Button>
+              </CardFooter>
+            </Card>
+          )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Hardware & Printers</CardTitle>
-              <CardDescription>Manage local thermal printers and KDS routing.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 border rounded-lg flex justify-between items-center bg-muted/10">
-                <div>
-                  <h4 className="font-bold text-sm">Front Desk Printer (Billing)</h4>
-                  <p className="text-xs text-muted-foreground mt-1">IP: 192.168.1.100 (Epson TM-T82X)</p>
+          {activeTab === "hardware" && (
+            <Card className="animate-in fade-in duration-300 slide-in-from-right-4">
+              <CardHeader>
+                <CardTitle>Hardware & Printers</CardTitle>
+                <CardDescription>Manage local thermal printers and KDS routing.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 border rounded-lg flex justify-between items-center bg-muted/10">
+                  <div>
+                    <h4 className="font-bold text-sm">Front Desk Printer (Billing)</h4>
+                    <p className="text-xs text-muted-foreground mt-1">IP: 192.168.1.100 (Epson TM-T82X)</p>
+                  </div>
+                  <Badge variant="outline" className="text-green-600 border-green-300">Online</Badge>
                 </div>
-                <Badge variant="outline" className="text-green-600 border-green-300">Online</Badge>
-              </div>
-              <div className="p-4 border rounded-lg flex justify-between items-center bg-muted/10">
-                <div>
-                  <h4 className="font-bold text-sm">Kitchen Printer (KOT Backup)</h4>
-                  <p className="text-xs text-muted-foreground mt-1">IP: 192.168.1.101 (TVS RP 3200)</p>
+                <div className="p-4 border rounded-lg flex justify-between items-center bg-muted/10">
+                  <div>
+                    <h4 className="font-bold text-sm">Kitchen Printer (KOT Backup)</h4>
+                    <p className="text-xs text-muted-foreground mt-1">IP: 192.168.1.101 (TVS RP 3200)</p>
+                  </div>
+                  <Badge variant="destructive">Offline</Badge>
                 </div>
-                <Badge variant="destructive">Offline</Badge>
-              </div>
-              <Button variant="outline" className="w-full">Discover New Printers on Network</Button>
-            </CardContent>
-          </Card>
+                <Button variant="outline" className="w-full">Discover New Printers on Network</Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === "notifications" && (
+            <Card className="animate-in fade-in duration-300 slide-in-from-right-4">
+              <CardHeader>
+                <CardTitle>Manager Notifications</CardTitle>
+                <CardDescription>Configure which alerts are sent via SMS or Email.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm">Critical Inventory Variances</h4>
+                    <p className="text-xs text-muted-foreground mt-1">Alert when physical stock variance exceeds 2%.</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm">Suspicious Voids / Overrides</h4>
+                    <p className="text-xs text-muted-foreground mt-1">Alert when a cashier cancels a paid bill.</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm">Daily End-of-Day Report</h4>
+                    <p className="text-xs text-muted-foreground mt-1">Receive the Tally summary email at midnight.</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === "danger" && (
+            <Card className="border-red-200 dark:border-red-900 animate-in fade-in duration-300 slide-in-from-right-4">
+              <CardHeader className="bg-red-50 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/50 pb-4">
+                <CardTitle className="text-red-700 dark:text-red-500 flex items-center">
+                  <ShieldAlert className="w-5 h-5 mr-2" /> Danger Zone
+                </CardTitle>
+                <CardDescription className="text-red-600/80 dark:text-red-400/80">
+                  Destructive actions that cannot be easily undone.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-6">
+                <div className="flex items-center justify-between p-4 border border-red-100 dark:border-red-900/30 rounded-lg">
+                  <div>
+                    <h4 className="font-bold text-sm">Factory Reset POS Data</h4>
+                    <p className="text-xs text-muted-foreground mt-1">Erases all offline local storage, tables, and mock data.</p>
+                  </div>
+                  <Button variant="destructive" size="sm"><Trash2 className="w-4 h-4 mr-2" /> Reset Local Data</Button>
+                </div>
+                <div className="flex items-center justify-between p-4 border border-red-100 dark:border-red-900/30 rounded-lg">
+                  <div>
+                    <h4 className="font-bold text-sm">Force Shut Down API Bridge</h4>
+                    <p className="text-xs text-muted-foreground mt-1">Disconnects Aggregators & Tally immediately.</p>
+                  </div>
+                  <Button variant="destructive" size="sm"><PowerOff className="w-4 h-4 mr-2" /> Disconnect APIs</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
         </div>
       </div>

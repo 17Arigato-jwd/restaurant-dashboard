@@ -83,6 +83,7 @@ async fn main() {
         .route("/api/auth/register", post(register))
         .route("/api/auth/login", post(login))
         .route("/api/whatsapp/send-bill", post(send_whatsapp_bill))
+        .route("/api/delivery/tracking", get(get_delivery_tracking))
         .with_state(state)
         .layer(cors);
 
@@ -186,4 +187,102 @@ async fn login(
     }
 
     (StatusCode::UNAUTHORIZED, "Invalid credentials").into_response()
+}
+
+#[derive(Serialize)]
+struct FleetTrackingData {
+    restaurant: [f64; 2],
+    deliveries: Vec<DeliveryData>,
+}
+
+#[derive(Serialize)]
+struct DeliveryData {
+    id: String,
+    customer: [f64; 2],
+    driver: [f64; 2],
+    route: Vec<[f64; 2]>,
+}
+
+async fn get_delivery_tracking() -> impl IntoResponse {
+    let restaurant_loc = [12.9345, 77.6265];
+    
+    // We will define 5 routes. 1 old, 4 new (far and near).
+    let routes = vec![
+        // 1. Original (Near, South East)
+        vec![
+            [12.9360, 77.6230], // Start
+            restaurant_loc,
+            [12.9330, 77.6266],
+            [12.9312, 77.6268],
+            [12.9290, 77.6270],
+            [12.9279, 77.6271], // Customer
+        ],
+        // 2. Near, North West (Indiranagar direction)
+        vec![
+            [12.9320, 77.6290],
+            restaurant_loc,
+            [12.9360, 77.6250],
+            [12.9390, 77.6220],
+            [12.9420, 77.6190],
+        ],
+        // 3. Far, HSR Layout direction (South)
+        vec![
+            [12.9380, 77.6280],
+            restaurant_loc,
+            [12.9250, 77.6300],
+            [12.9150, 77.6350],
+            [12.9080, 77.6390],
+        ],
+        // 4. Far, BTM Layout direction (West)
+        vec![
+            [12.9310, 77.6240],
+            restaurant_loc,
+            [12.9320, 77.6200],
+            [12.9250, 77.6150],
+            [12.9200, 77.6100],
+            [12.9160, 77.6050],
+        ],
+        // 5. Very Near (Just a couple streets away)
+        vec![
+            [12.9355, 77.6270],
+            restaurant_loc,
+            [12.9350, 77.6285],
+            [12.9365, 77.6295],
+        ]
+    ];
+
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+    
+    let mut deliveries = Vec::new();
+    
+    for (i, route) in routes.iter().enumerate() {
+        // Offset the cycle duration and progress slightly for each driver so they aren't synchronized
+        let cycle_duration = 20 + (i as u64 * 5); 
+        let progress = ((now + (i as u64 * 13)) % cycle_duration) as f64 / cycle_duration as f64;
+        
+        let total_segments = (route.len() - 1) as f64;
+        let current_segment_f = progress * total_segments;
+        let current_segment = current_segment_f.floor() as usize;
+        let segment_progress = current_segment_f - current_segment_f.floor();
+
+        let p1 = route[current_segment];
+        let p2 = route[current_segment + 1];
+        
+        let current_lat = p1[0] + (p2[0] - p1[0]) * segment_progress;
+        let current_lng = p1[1] + (p2[1] - p1[1]) * segment_progress;
+        
+        deliveries.push(DeliveryData {
+            id: format!("driver-{}", i),
+            customer: *route.last().unwrap(),
+            driver: [current_lat, current_lng],
+            route: route.clone(),
+        });
+    }
+
+    let response = FleetTrackingData {
+        restaurant: restaurant_loc,
+        deliveries,
+    };
+    
+    (StatusCode::OK, Json(response)).into_response()
 }
