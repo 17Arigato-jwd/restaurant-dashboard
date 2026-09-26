@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/components/ThemeProvider';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -70,10 +70,10 @@ export function Header() {
   };
 
   const profileMenuItems = [
-    { label: "Your Profile", action: () => router.push('/settings') },
-    { label: "Account Settings", action: () => router.push('/settings') },
-    { label: "Account Notification", action: () => router.push('/settings') },
-    { label: "Team", action: () => router.push('/settings') },
+    { label: "Your Profile", action: () => router.push('/restaurant-settings') },
+    { label: "Account Settings", action: () => router.push('/restaurant-settings') },
+    { label: "Account Notification", action: () => router.push('/restaurant-settings') },
+    { label: "Team", action: () => router.push('/restaurant-settings') },
     { label: "Support", action: () => alert('Support module coming soon!') },
     { label: "Theme Toggle", action: () => setTheme(theme === 'dark' ? 'light' : 'dark') },
     { label: "Switch Account", action: () => { logout(); router.push('/login'); } },
