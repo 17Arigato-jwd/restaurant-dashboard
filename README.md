@@ -1,65 +1,57 @@
-# Easy Restaurant Operations SPA
+# Easy Restaurant Operations SPA 🍛
 
-A comprehensive, real-time single-page application (SPA) built to streamline operations for Indian Casual Dining & QSR Outlets. This dashboard addresses the unique complexities of Indian restaurant operations, including high delivery aggregator reliance, multi-station kitchen routing, complex bank payout reconciliations, and instant accounting sync.
-
-## Key Features
-
-* **Command Center Dashboard:** Real-time visibility into total daily sales, channel revenue share, average prep times, and live kitchen active orders.
-* **Aggregator Management:** Centralized hub for Swiggy, Zomato, and ONDC with Direct POS Order Ingestion and a 1-click "Panic Pause" for heavy kitchen rushes.
-* **Live Digital Billing & Table Management:** Visual floor plan map with real-time status and WhatsApp digital bill transmission to save on paper rolls.
-* **Kitchen Display System (KDS):** Multi-station ticket routing with automated prep timers and visual delay escalation.
-* **Stock & Waste Tracking:** Automated BOM deduction from physical inventory with variance alerts for theft/waste.
-* **Menu Engineering:** 4-Quadrant BCG Matrix classification (Stars, Puzzles, Plow Horses, Dogs) and an interactive dish margin simulator.
-* **Financial Reconciliation:** Dispute claim generator and step-by-step order deduction subtraction stack for delivery partners.
-* **Tally Prime Sync:** 1-Click integration to sync daily sales vouchers, payment breakdowns, and GST liabilities straight to Tally.
+An ultra-performant, real-time Restaurant Operations Dashboard designed specifically for the unique complexities of Indian Casual Dining and QSR outlets. This platform merges live order management, kitchen display systems (KDS), delivery aggregator integration, and advanced analytics into a single cohesive interface.
 
 ## Tech Stack
+*   **Frontend**: Next.js 15 (App Router), React, Tailwind CSS v4, Shadcn UI, Zustand (State Management).
+*   **Backend**: Rust, Axum (Web Framework), Tokio (Async runtime), SQLx (SQLite Database), jsonwebtoken (Auth).
 
-* **Framework:** [Next.js](https://nextjs.org/) (App Router)
-* **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-* **UI Components:** [Shadcn UI](https://ui.shadcn.com/) / Base UI
-* **State Management:** [Zustand](https://github.com/pmndrs/zustand)
-* **Icons:** [Lucide React](https://lucide.dev/)
+---
 
-## Getting Started
+## Prerequisites
+Before you begin, ensure you have the following installed on your machine:
+1.  [Node.js](https://nodejs.org/) (v18 or higher) & `npm`
+2.  [Rust & Cargo](https://rustup.rs/) (latest stable)
 
-First, install the dependencies. (Ensure you have Node.js installed on your system).
+---
 
+## 🚀 Setup & Running Locally
+
+To run this application, you will need to run the frontend and backend servers simultaneously in two separate terminal windows.
+
+### 1. Start the Rust Backend
+The backend uses a local SQLite database. You don't need to install any external database servers; the application will automatically create the `restaurant.db` file and run the necessary schema migrations on startup.
+
+Open your first terminal and run:
 ```bash
-# Navigate to the web directory
-cd web
-
-# Install dependencies
-npm install
+cd backend
+cargo run
 ```
+*Note: The first time you run this, Cargo will take a minute or two to download and compile the dependencies. Once finished, you should see:* `Rust backend listening on 127.0.0.1:8000`.
 
-Then, run the development server:
-
+### 2. Start the Next.js Frontend
+Open a second terminal window and run:
 ```bash
+cd web
+npm install
 npm run dev
 ```
+*Once the server starts, open your browser and navigate to:* [http://localhost:3000](http://localhost:3000)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result. The root page automatically redirects to the main `/dashboard` route.
+---
+
+## 🛠️ Usage Guide
+
+1.  **Authentication**: When you first launch the app, you will be greeted by the login screen. Since there are no users yet, click **"Need an account? Register here."**
+2.  **Registration**: Register with any email (e.g., `owner@test.com`) and password. The backend securely hashes this password using `bcrypt` and stores it in the local SQLite database.
+3.  **Dashboard**: After logging in, you will be redirected to the Dashboard Overview. Your session is managed securely via JWT and persisted using Zustand, meaning you will stay logged in even if you refresh the page.
+4.  **Features**:
+    *   **Theme Toggle**: Click the user profile icon in the top right to switch between Dark and Light mode.
+    *   **Emergency Controls**: Test out the highly visible "Panic Pause" button in the header.
+
+---
 
 ## Project Structure
-
-* `/Plans/`: Detailed feature catalogs and phase-by-phase development roadmaps.
-* `/web/`: The Next.js web application.
-  * `src/app/`: Next.js App Router pages (`/dashboard`, `/tables`, `/kds`, `/settings`).
-  * `src/components/`: Reusable UI components (Modals, Headers, Buttons).
-  * `src/store/`: Zustand global state management.
-  * `src/lib/`: Utility functions.
-
-## Development Phases
-
-This project is being developed in 10 structured phases (refer to `Plans/PHASES.md` for full details):
-1. Foundation & Navigation (Header & Emergency Controls) - *Completed*
-2. Core Operations & Table Management
-3. Kitchen Display System (KDS)
-4. Daily Overview & Sales Command Center
-5. Online Delivery Manager
-6. Menu Profitability & Engineering
-7. Stock & Ingredient Waste Tracker
-8. Bank Payouts & Commission Reconciliation
-9. Staff Activity Audit & Anti-Theft Security
-10. Integrations & External Sync
+*   `/Plans` - Contains detailed Markdown specifications for the 10-phase development roadmap.
+*   `/web` - The Next.js frontend application.
+*   `/backend` - The Rust/Axum backend API.
