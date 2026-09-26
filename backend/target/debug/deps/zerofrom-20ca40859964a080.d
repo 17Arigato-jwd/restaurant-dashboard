@@ -1,0 +1,9 @@
+/mnt/windows/Users/Varchas/VCHS - Programming Folder/Overcaffinated/restaurant-dashboard/backend/target/debug/deps/zerofrom-20ca40859964a080.d: /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/lib.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/macro_impls.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/zero_from.rs
+
+/mnt/windows/Users/Varchas/VCHS - Programming Folder/Overcaffinated/restaurant-dashboard/backend/target/debug/deps/libzerofrom-20ca40859964a080.rlib: /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/lib.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/macro_impls.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/zero_from.rs
+
+/mnt/windows/Users/Varchas/VCHS - Programming Folder/Overcaffinated/restaurant-dashboard/backend/target/debug/deps/libzerofrom-20ca40859964a080.rmeta: /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/lib.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/macro_impls.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/zero_from.rs
+
+/home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/lib.rs:
+/home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/macro_impls.rs:
+/home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zerofrom-0.1.8/src/zero_from.rs:

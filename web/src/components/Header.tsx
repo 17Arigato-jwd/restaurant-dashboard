@@ -1,5 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +10,9 @@ import { StockoutModal } from './StockoutModal';
 import { ManagerPinModal } from './ManagerPinModal';
 
 export function Header() {
+  const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  
   const { 
     isTallyConnected, 
     offlineSalesPending, 
@@ -64,14 +69,14 @@ export function Header() {
   };
 
   const profileMenuItems = [
-    { label: "Your Profile", action: () => {} },
-    { label: "Account Settings", action: () => {} },
-    { label: "Account Notification", action: () => {} },
-    { label: "Team", action: () => {} },
-    { label: "Support", action: () => {} },
-    { label: "Theme Toggle", action: () => {} },
-    { label: "Switch Account", action: () => {} },
-    { label: "Sign out", action: () => {} },
+    { label: "Your Profile", action: () => router.push('/settings') },
+    { label: "Account Settings", action: () => router.push('/settings') },
+    { label: "Account Notification", action: () => router.push('/settings') },
+    { label: "Team", action: () => router.push('/settings') },
+    { label: "Support", action: () => alert('Support module coming soon!') },
+    { label: "Theme Toggle", action: () => setTheme(theme === 'dark' ? 'light' : 'dark') },
+    { label: "Switch Account", action: () => router.push('/login') },
+    { label: "Sign out", action: () => router.push('/login') },
   ];
 
   return (
