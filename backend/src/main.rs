@@ -82,6 +82,7 @@ async fn main() {
         .route("/api/health", get(|| async { "OK" }))
         .route("/api/auth/register", post(register))
         .route("/api/auth/login", post(login))
+        .route("/api/whatsapp/send-bill", post(send_whatsapp_bill))
         .with_state(state)
         .layer(cors);
 
@@ -90,6 +91,38 @@ async fn main() {
     
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
+}
+
+#[derive(Deserialize)]
+struct WhatsAppBillRequest {
+    tableId: String,
+    phone: String,
+    billTotal: String,
+    invoiceNo: String,
+}
+
+#[derive(Serialize)]
+struct WhatsAppResponse {
+    ok: bool,
+    messageId: String,
+}
+
+async fn send_whatsapp_bill(
+    Json(payload): Json<WhatsAppBillRequest>,
+) -> impl IntoResponse {
+    println!("Simulating WhatsApp bill send to {} for table {}", payload.phone, payload.tableId);
+    
+    // In a real scenario, we would make a reqwest HTTP POST to Meta's Graph API here:
+    // https://graph.facebook.com/v19.0/.../messages
+    // with the template name 'digital_bill_receipt' as specified in the PDF blueprint.
+    
+    // For now, return a mocked success response
+    let response = WhatsAppResponse {
+        ok: true,
+        messageId: format!("wamid.mock.{}", Uuid::new_v4().to_string().replace("-", "").chars().take(10).collect::<String>()),
+    };
+
+    (StatusCode::OK, Json(response)).into_response()
 }
 
 async fn register(
