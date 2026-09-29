@@ -66,17 +66,35 @@ export function Header() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handlePinSuccess = () => {
+    setIsPinModalOpen(false);
+    triggerEmergencyPause();
+    toast.add({ type: "error", title: "Emergency Pause Active", description: "Aggregators suspended.", priority: "high" });
+  };
+
+  const handleCancelPanic = () => {
+    cancelEmergencyPause();
+    toast.add({ type: "success", title: "Emergency Pause Cancelled", description: "Aggregators resumed normally." });
+  };
+
   const handlePanicClick = () => {
     if (isEmergencyPaused) {
-      cancelEmergencyPause();
+      handleCancelPanic();
     } else {
       setIsPinModalOpen(true);
     }
   };
 
-  const handlePinSuccess = () => {
-    setIsPinModalOpen(false);
-    triggerEmergencyPause();
+  const handleThemeToggle = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    toast.add({ description: `Switched to ${newTheme} theme.` });
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+    toast.add({ type: "success", title: "Logged Out", description: "You have been successfully logged out." });
   };
 
   return (
@@ -144,7 +162,7 @@ export function Header() {
                   <DropdownMenuItem onClick={() => router.push('/account?tab=profile')}><User /> <span>Profile</span></DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/account?tab=settings')}><Settings /> <span>Account Settings</span></DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/account?tab=team')}><Users /> <span>Team</span></DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                  <DropdownMenuItem onClick={handleThemeToggle}>
                     {theme === 'dark' ? <Sun /> : <Moon />}
                     <span>Toggle Theme</span>
                   </DropdownMenuItem>
@@ -181,7 +199,7 @@ export function Header() {
               </DrawerDescription>
             </DrawerHeader>
             <DrawerFooter className="grid grid-cols-2">
-              <Button variant="destructive" onClick={() => { logout(); router.push('/login'); }}>Sign Out</Button>
+              <Button variant="destructive" onClick={handleLogout}>Sign Out</Button>
               <DrawerClose render={<Button className="bg-secondary-background text-foreground" variant="noShadow" />}>
                 Cancel
               </DrawerClose>

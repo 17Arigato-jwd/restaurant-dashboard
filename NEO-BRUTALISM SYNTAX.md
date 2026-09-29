@@ -913,3 +913,53 @@ function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<"span"
 
 export { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbEllipsis }
 ```
+
+---
+
+## 15. Toast Component
+
+**File:** `components/ui/toast.tsx`
+
+```tsx
+"use client"
+
+import { Toast as ToastPrimitive } from "@base-ui/react/toast"
+import { CircleCheckIcon, InfoIcon, Loader2Icon, OctagonXIcon, TriangleAlertIcon, XIcon } from "lucide-react"
+
+import * as React from "react"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+
+const toast = ToastPrimitive.createToastManager()
+
+// Highly stylized Neobrutalist toasts rendering in a Portal.
+// Features success, info, warning, error, and promise variants with thick borders and box shadows.
+// (Code omitted for brevity, fetches from neobrutalism registry)
+
+export {
+  Toast,
+  ToastAction,
+  ToastClose,
+  ToastDescription,
+  ToastPortal,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+  createToastManager,
+  toast,
+  useToastManager,
+}
+```
+
+**Usage (Anywhere!):**
+
+```tsx
+import { toast } from "@/components/ui/toast"
+
+// Trigger a toast dynamically without needing a hook!
+toast.add({
+  type: "success",
+  title: "Settings Saved",
+  description: "Your profile has been updated."
+})
+```

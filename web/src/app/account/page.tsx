@@ -2,6 +2,7 @@
 
 import React, { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { toast } from "@/components/ui/toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,7 +102,7 @@ function AccountContent() {
                 </div>
               </CardContent>
               <CardFooter className="border-t-2 border-border bg-muted/20 px-6 py-4">
-                <Button><Save className="w-4 h-4 mr-2" /> Save Profile</Button>
+                <Button onClick={() => toast.add({ type: "success", title: "Success", description: "Profile details updated." })}><Save className="w-4 h-4 mr-2" /> Save Profile</Button>
               </CardFooter>
             </Card>
           )}
@@ -121,21 +122,21 @@ function AccountContent() {
                         <Label className="text-base font-bold">Email Reports</Label>
                         <p className="text-sm text-muted-foreground font-bold">Receive a weekly summary in your inbox.</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch defaultChecked onCheckedChange={(c) => toast.add({ description: c ? "Email reports enabled." : "Email reports disabled." })} />
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label className="text-base font-bold">WhatsApp Reports</Label>
                         <p className="text-sm text-muted-foreground font-bold">Get a quick text summary every Monday morning.</p>
                       </div>
-                      <Switch />
+                      <Switch onCheckedChange={(c) => toast.add({ description: c ? "WhatsApp reports enabled." : "WhatsApp reports disabled." })} />
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label className="text-base font-bold">Detailed PDF Attachments</Label>
                         <p className="text-sm text-muted-foreground font-bold">Include a full PDF breakdown of item-wise sales.</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch defaultChecked onCheckedChange={(c) => toast.add({ description: c ? "PDF attachments enabled." : "PDF attachments disabled." })} />
                     </div>
                   </div>
                 </div>
@@ -148,13 +149,13 @@ function AccountContent() {
                         <p className="font-bold">Two-Factor Authentication</p>
                         <p className="text-sm text-muted-foreground">Add an extra layer of security to your account.</p>
                       </div>
-                      <Button variant="outline">Enable 2FA</Button>
+                      <Button variant="outline" onClick={() => toast.add({ type: "info", description: "2FA setup instructions sent to email." })}>Enable 2FA</Button>
                     </div>
                   </div>
                 </div>
               </CardContent>
               <CardFooter className="border-t-2 border-border bg-muted/20 px-6 py-4">
-                <Button><Save className="w-4 h-4 mr-2" /> Save Preferences</Button>
+                <Button onClick={() => toast.add({ type: "success", title: "Saved", description: "Account preferences saved." })}><Save className="w-4 h-4 mr-2" /> Save Preferences</Button>
               </CardFooter>
             </Card>
           )}
@@ -167,7 +168,7 @@ function AccountContent() {
                     <CardTitle>Team Management</CardTitle>
                     <CardDescription>Manage who has access to your restaurant dashboard.</CardDescription>
                   </div>
-                  <Button><UserPlus className="w-4 h-4 mr-2" /> Invite Member</Button>
+                  <Button onClick={() => toast.add({ type: "success", title: "Invite Sent", description: "Invitation sent successfully." })}><UserPlus className="w-4 h-4 mr-2" /> Invite Member</Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -196,7 +197,7 @@ function AccountContent() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <Badge variant="outline">Manager</Badge>
-                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950">
+                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950" onClick={() => toast.add({ type: "warning", title: "Removed", description: "Manager access revoked." })}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -214,7 +215,7 @@ function AccountContent() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <Badge variant="secondary">Pending</Badge>
-                    <Button variant="ghost" size="sm">Resend</Button>
+                    <Button variant="ghost" size="sm" onClick={() => toast.add({ type: "info", description: "Invite reminder sent." })}>Resend</Button>
                   </div>
                 </div>
               </CardContent>
