@@ -12,6 +12,7 @@ import {
   Combine,
   MessageSquare,
   Settings,
+  Users,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -38,6 +39,7 @@ const items = [
   { title: "Audit & Security", url: "/audit-logs", icon: Shield },
   { title: "Tally & Integrations", url: "/pos-comparison", icon: Combine },
   { title: "WhatsApp API", url: "/whatsapp", icon: MessageSquare },
+  { title: "Customer History", url: "/customer-history", icon: Users },
   { title: "Settings", url: "/restaurant-settings", icon: Settings },
 ]
 
