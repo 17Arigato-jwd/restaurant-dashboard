@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CheckCircle2, WifiOff, User } from 'lucide-react';
 import { StockoutModal } from './StockoutModal';
 import { ManagerPinModal } from './ManagerPinModal';
+import { GlobalSearch } from './GlobalSearch';
 
 export function Header() {
   const router = useRouter();
@@ -115,22 +116,23 @@ export function Header() {
         </div>
 
         <div className="flex items-center space-x-4">
+          <GlobalSearch />
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm" onClick={() => setIsStockoutOpen(true)}>
               Stockout Controls
             </Button>
             <Button 
               variant={isEmergencyPaused ? "destructive" : "default"} 
-              size="sm"
+              size="icon"
               className={!isEmergencyPaused ? "bg-red-600 hover:bg-red-700 text-white" : ""}
               onClick={handlePanicClick}
+              title={isEmergencyPaused ? `Paused (${formatTime(pauseTimerRemaining)}) - Cancel` : "Panic Pause"}
             >
-              <AlertCircle className="w-4 h-4 mr-2" />
-              {isEmergencyPaused ? `Paused (${formatTime(pauseTimerRemaining)}) - Cancel` : "Panic Pause"}
+              <AlertCircle className="w-5 h-5" />
             </Button>
           </div>
 
-          <div className="relative border-l pl-4" ref={profileRef}>
+          <div className="relative border-l pl-4 border-border" ref={profileRef}>
             <Button 
               variant="ghost" 
               size="icon" 
