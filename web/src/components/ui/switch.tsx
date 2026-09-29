@@ -1,13 +1,16 @@
 "use client"
 
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch"
+
+import * as React from "react"
+
 import { cn } from "cn"
 
 function Switch({
   className,
   size = "default",
   ...props
-}: SwitchPrimitive.Root.Props & {
+}: React.ComponentProps<typeof SwitchPrimitive.Root> & {
   size?: "sm" | "default"
 }) {
   return (
@@ -15,14 +18,20 @@ function Switch({
       data-slot="switch"
       data-size={size}
       className={cn(
-        "peer group/switch relative inline-flex shrink-0 items-center rounded-base border-2 border-border shadow-shadow transition-all outline-none after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:ring-3 focus-visible:ring-ring/50 data-[size=default]:h-[24px] data-[size=default]:w-[44px] data-[size=sm]:h-[20px] data-[size=sm]:w-[36px] data-checked:bg-main data-unchecked:bg-secondary-background data-disabled:cursor-not-allowed data-disabled:opacity-50",
-        className
+        "peer inline-flex shrink-0 cursor-pointer items-center rounded-full border-2 border-border bg-secondary-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-checked:bg-main data-unchecked:bg-secondary-background",
+        size === "default" && "h-6 w-12",
+        size === "sm" && "h-5 w-9",
+        className,
       )}
       {...props}
     >
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
-        className="pointer-events-none block rounded-sm bg-foreground ring-0 transition-transform group-data-[size=default]/switch:h-4 group-data-[size=default]/switch:w-4 group-data-[size=sm]/switch:h-3 group-data-[size=sm]/switch:w-3 group-data-[size=default]/switch:data-checked:translate-x-[calc(100%+2px)] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%+2px)] group-data-[size=default]/switch:data-unchecked:translate-x-[2px] group-data-[size=sm]/switch:data-unchecked:translate-x-[2px]"
+        className={cn(
+          "pointer-events-none block rounded-full bg-white border-2 border-border ring-0 transition-transform data-unchecked:translate-x-1",
+          size === "default" && "h-4 w-4 data-checked:translate-x-6",
+          size === "sm" && "h-3 w-3 data-checked:translate-x-4",
+        )}
       />
     </SwitchPrimitive.Root>
   )
