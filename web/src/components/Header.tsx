@@ -141,9 +141,9 @@ export function Header() {
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => router.push('/restaurant-settings')}><User /> <span>Profile</span></DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/restaurant-settings')}><Settings /> <span>Account Settings</span></DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/restaurant-settings')}><Users /> <span>Team</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/account?tab=profile')}><User /> <span>Profile</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/account?tab=settings')}><Settings /> <span>Account Settings</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/account?tab=team')}><Users /> <span>Team</span></DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
                     {theme === 'dark' ? <Sun /> : <Moon />}
                     <span>Toggle Theme</span>
