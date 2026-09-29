@@ -8,6 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Store, Receipt, Printer, Bell, ShieldAlert, Save, Trash2, PowerOff } from "lucide-react";
 
 export default function SettingsPage() {
@@ -212,19 +222,65 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
-                <div className="flex items-center justify-between p-4 border border-red-100 dark:border-red-900/30 rounded-lg">
+                <div className="flex items-center justify-between p-4 border-2 border-border bg-secondary-background rounded-base">
                   <div>
                     <h4 className="font-bold text-sm">Factory Reset POS Data</h4>
                     <p className="text-xs text-muted-foreground mt-1">Erases all offline local storage, tables, and mock data.</p>
                   </div>
-                  <Button variant="destructive" size="sm"><Trash2 className="w-4 h-4 mr-2" /> Reset Local Data</Button>
+                  <Drawer>
+                    <DrawerTrigger render={<Button variant="destructive" size="sm" />}>
+                      <Trash2 className="w-4 h-4 mr-2" /> Reset Local Data
+                    </DrawerTrigger>
+                    <DrawerContent>
+                      <div className="mx-auto w-[400px]">
+                        <DrawerHeader>
+                          <DrawerTitle>Are you absolutely sure?</DrawerTitle>
+                          <DrawerDescription>
+                            This will permanently delete your POS data. Please type <span className="font-bold text-foreground">factory-reset</span> to confirm.
+                          </DrawerDescription>
+                        </DrawerHeader>
+                        <div className="px-4 py-4">
+                          <Input placeholder="factory-reset" />
+                        </div>
+                        <DrawerFooter className="grid grid-cols-2">
+                          <Button variant="destructive">Reset Data</Button>
+                          <DrawerClose render={<Button className="bg-secondary-background text-foreground" variant="noShadow" />}>
+                            Cancel
+                          </DrawerClose>
+                        </DrawerFooter>
+                      </div>
+                    </DrawerContent>
+                  </Drawer>
                 </div>
-                <div className="flex items-center justify-between p-4 border border-red-100 dark:border-red-900/30 rounded-lg">
+                <div className="flex items-center justify-between p-4 border-2 border-border bg-secondary-background rounded-base">
                   <div>
                     <h4 className="font-bold text-sm">Force Shut Down API Bridge</h4>
                     <p className="text-xs text-muted-foreground mt-1">Disconnects Aggregators & Tally immediately.</p>
                   </div>
-                  <Button variant="destructive" size="sm"><PowerOff className="w-4 h-4 mr-2" /> Disconnect APIs</Button>
+                  <Drawer>
+                    <DrawerTrigger render={<Button variant="destructive" size="sm" />}>
+                      <PowerOff className="w-4 h-4 mr-2" /> Disconnect APIs
+                    </DrawerTrigger>
+                    <DrawerContent>
+                      <div className="mx-auto w-[400px]">
+                        <DrawerHeader>
+                          <DrawerTitle>Disconnect API Bridge?</DrawerTitle>
+                          <DrawerDescription>
+                            This will halt all orders from Zomato and Swiggy. Type <span className="font-bold text-foreground">disconnect</span> to confirm.
+                          </DrawerDescription>
+                        </DrawerHeader>
+                        <div className="px-4 py-4">
+                          <Input placeholder="disconnect" />
+                        </div>
+                        <DrawerFooter className="grid grid-cols-2">
+                          <Button variant="destructive">Disconnect</Button>
+                          <DrawerClose render={<Button className="bg-secondary-background text-foreground" variant="noShadow" />}>
+                            Cancel
+                          </DrawerClose>
+                        </DrawerFooter>
+                      </div>
+                    </DrawerContent>
+                  </Drawer>
                 </div>
               </CardContent>
             </Card>

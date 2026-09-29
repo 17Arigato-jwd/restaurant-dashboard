@@ -565,3 +565,149 @@ export default function DropdownMenuDemo() {
   )
 }
 ```
+
+---
+
+## 9. Drawer Component
+
+**File:** `components/ui/drawer.tsx`
+
+```tsx
+"use client"
+
+import { Drawer as DrawerPrimitive } from "@base-ui/react/drawer"
+import * as React from "react"
+import { cn } from "cn"
+
+type DrawerContextProps = {
+  hasSnapPoints: boolean
+  modal: React.ComponentProps<typeof DrawerPrimitive.Root>["modal"]
+  showSwipeHandle: boolean
+  swipeDirection: NonNullable<React.ComponentProps<typeof DrawerPrimitive.Root>["swipeDirection"]>
+}
+
+const DrawerContext = React.createContext<DrawerContextProps | null>(null)
+
+function useDrawer() {
+  const context = React.useContext(DrawerContext)
+  if (!context) {
+    throw new Error("useDrawer must be used within a Drawer.")
+  }
+  return context
+}
+
+function Drawer({
+  modal = true,
+  snapPoints,
+  swipeDirection = "down",
+  showSwipeHandle = swipeDirection === "down",
+  ...props
+}: React.ComponentProps<typeof DrawerPrimitive.Root> & { showSwipeHandle?: boolean }) {
+  const hasSnapPoints = snapPoints != null && snapPoints.length > 0
+  const contextValue = React.useMemo(
+    () => ({ hasSnapPoints, modal, showSwipeHandle, swipeDirection }),
+    [hasSnapPoints, modal, showSwipeHandle, swipeDirection],
+  )
+  return (
+    <DrawerContext.Provider value={contextValue}>
+      <DrawerPrimitive.Root data-slot="drawer" modal={modal} snapPoints={snapPoints} swipeDirection={swipeDirection} {...props} />
+    </DrawerContext.Provider>
+  )
+}
+
+function DrawerTrigger({ ...props }: React.ComponentProps<typeof DrawerPrimitive.Trigger>) {
+  return <DrawerPrimitive.Trigger data-slot="drawer-trigger" {...props} />
+}
+
+function DrawerPortal({ ...props }: React.ComponentProps<typeof DrawerPrimitive.Portal>) {
+  return <DrawerPrimitive.Portal data-slot="drawer-portal" {...props} />
+}
+
+function DrawerClose({ ...props }: React.ComponentProps<typeof DrawerPrimitive.Close>) {
+  return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />
+}
+
+function DrawerOverlay({ className, ...props }: React.ComponentProps<typeof DrawerPrimitive.Backdrop>) {
+  return (
+    <DrawerPrimitive.Backdrop
+      data-slot="drawer-overlay"
+      className={cn("fixed inset-0 z-50 min-h-dvh bg-overlay opacity-[max(var(--drawer-overlay-min-opacity,0),calc(1-var(--drawer-swipe-progress)))] transition-opacity duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] select-none data-ending-style:pointer-events-none data-ending-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] data-snap-points:[--drawer-overlay-min-opacity:0.5] data-starting-style:opacity-0 data-swiping:duration-0 supports-[-webkit-touch-callout:none]:absolute", className)}
+      {...props}
+    />
+  )
+}
+
+function DrawerContent({ className, children, ...props }: React.ComponentProps<typeof DrawerPrimitive.Popup>) {
+  const { hasSnapPoints, modal, showSwipeHandle, swipeDirection } = useDrawer()
+  const swipeAxis = swipeDirection === "down" || swipeDirection === "up" ? "y" : "x"
+
+  return (
+    <DrawerPortal>
+      {modal === true && <DrawerOverlay data-snap-points={hasSnapPoints ? "" : undefined} />}
+      <DrawerPrimitive.Viewport data-slot="drawer-viewport" data-modal={modal} className="pointer-events-none fixed inset-0 z-50 select-none data-[modal=true]:pointer-events-auto">
+        <DrawerPrimitive.Popup
+          data-slot="drawer-popup"
+          data-swipe-axis={swipeAxis}
+          data-snap-points={hasSnapPoints ? "" : undefined}
+          className={cn(
+            "group/drawer-popup pointer-events-auto fixed z-50 m-(--drawer-inset,0px) flex h-(--drawer-content-height) max-h-(--drawer-content-max-height,none) min-h-0 w-(--drawer-content-width,auto) transform-[translate3d(var(--translate-x,0px),var(--translate-y,0px),0)_scale(var(--stack-scale))] flex-col bg-background text-foreground border-border transition-[transform,height,opacity,filter] duration-450 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none select-none",
+            "data-[swipe-direction=down]:rounded-t-base data-[swipe-direction=down]:border-t-2 data-[swipe-direction=down]:bottom-0",
+            className
+          )}
+          {...props}
+        >
+          <DrawerPrimitive.Content data-slot="drawer-content" className="flex min-h-0 flex-1 flex-col overflow-hidden overscroll-contain rounded-[inherit] transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text group-data-nested-drawer-open/drawer-popup:opacity-0 group-data-nested-drawer-swiping/drawer-popup:opacity-100 group-data-swiping/drawer-popup:select-none">
+            {children}
+          </DrawerPrimitive.Content>
+        </DrawerPrimitive.Popup>
+      </DrawerPrimitive.Viewport>
+    </DrawerPortal>
+  )
+}
+
+function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="drawer-header" className={cn("grid gap-1.5 p-4 text-center sm:text-left", className)} {...props} />
+}
+
+function DrawerFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="drawer-footer" className={cn("mt-auto flex flex-col gap-3 p-4", className)} {...props} />
+}
+
+function DrawerTitle({ className, ...props }: React.ComponentProps<typeof DrawerPrimitive.Title>) {
+  return <DrawerPrimitive.Title data-slot="drawer-title" className={cn("text-lg font-heading leading-none tracking-tight", className)} {...props} />
+}
+
+function DrawerDescription({ className, ...props }: React.ComponentProps<typeof DrawerPrimitive.Description>) {
+  return <DrawerPrimitive.Description data-slot="drawer-description" className={cn("text-sm font-base text-foreground", className)} {...props} />
+}
+
+export { Drawer, DrawerPortal, DrawerOverlay, DrawerTrigger, DrawerClose, DrawerContent, DrawerHeader, DrawerFooter, DrawerTitle, DrawerDescription }
+```
+
+**Demo:**
+```tsx
+export default function DrawerDemo() {
+  return (
+    <Drawer>
+      <DrawerTrigger render={<Button />}>Open Drawer</DrawerTrigger>
+      <DrawerContent>
+        <div className="mx-auto w-[400px]">
+          <DrawerHeader>
+            <DrawerTitle>Are you absolutely sure?</DrawerTitle>
+            <DrawerDescription>This action cannot be undone. Please type out the confirmation.</DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4 py-4">
+            <Input placeholder="factory-reset" />
+          </div>
+          <DrawerFooter className="grid grid-cols-2">
+            <Button variant="destructive">Submit</Button>
+            <DrawerClose render={<Button className="bg-secondary-background text-foreground" variant="noShadow" />}>
+              Cancel
+            </DrawerClose>
+          </DrawerFooter>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  )
+}
+```

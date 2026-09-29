@@ -19,6 +19,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 
 export function Header() {
   const router = useRouter();
@@ -38,6 +47,7 @@ export function Header() {
 
   const [isStockoutOpen, setIsStockoutOpen] = useState(false);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [isLogoutDrawerOpen, setIsLogoutDrawerOpen] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -140,7 +150,7 @@ export function Header() {
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => { logout(); router.push('/login'); }}>
+                <DropdownMenuItem onClick={() => setIsLogoutDrawerOpen(true)}>
                   <LogOut />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -160,6 +170,25 @@ export function Header() {
         onSuccess={handlePinSuccess}
         actionName="Emergency Aggregator Pause"
       />
+
+      <Drawer open={isLogoutDrawerOpen} onOpenChange={setIsLogoutDrawerOpen}>
+        <DrawerContent>
+          <div className="mx-auto w-[400px]">
+            <DrawerHeader>
+              <DrawerTitle>Are you absolutely sure?</DrawerTitle>
+              <DrawerDescription>
+                You are about to sign out. All unsaved changes will be lost.
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter className="grid grid-cols-2">
+              <Button variant="destructive" onClick={() => { logout(); router.push('/login'); }}>Sign Out</Button>
+              <DrawerClose render={<Button className="bg-secondary-background text-foreground" variant="noShadow" />}>
+                Cancel
+              </DrawerClose>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </header>
   );
 }
