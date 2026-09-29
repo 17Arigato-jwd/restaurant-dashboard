@@ -5,7 +5,7 @@ import { useTheme } from '@/components/ThemeProvider';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle2, WifiOff, User } from 'lucide-react';
+import { AlertCircle, CheckCircle2, WifiOff, User, Settings, Users, Sun, Moon, LogOut } from 'lucide-react';
 import { StockoutModal } from './StockoutModal';
 import { ManagerPinModal } from './ManagerPinModal';
 import { GlobalSearch } from './GlobalSearch';
@@ -131,13 +131,19 @@ export function Header() {
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => router.push('/restaurant-settings')}>Profile</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/restaurant-settings')}>Account Settings</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/restaurant-settings')}>Team</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>Toggle Theme</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/restaurant-settings')}><User /> <span>Profile</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/restaurant-settings')}><Settings /> <span>Account Settings</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/restaurant-settings')}><Users /> <span>Team</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                    {theme === 'dark' ? <Sun /> : <Moon />}
+                    <span>Toggle Theme</span>
+                  </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => { logout(); router.push('/login'); }}>Log out</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { logout(); router.push('/login'); }}>
+                  <LogOut />
+                  <span>Log out</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

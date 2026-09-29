@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { Store, Receipt, Printer, Bell, ShieldAlert, Save, Trash2, PowerOff } from "lucide-react";
 
 export default function SettingsPage() {
@@ -22,43 +23,49 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         
         {/* Navigation Sidebar for Settings */}
-        <div className="space-y-1">
-          <Button 
-            variant={activeTab === "outlet" ? "secondary" : "ghost"} 
-            className="w-full justify-start"
-            onClick={() => setActiveTab("outlet")}
-          >
-            <Store className="w-4 h-4 mr-2" /> Outlet Details
-          </Button>
-          <Button 
-            variant={activeTab === "taxes" ? "secondary" : "ghost"} 
-            className="w-full justify-start"
-            onClick={() => setActiveTab("taxes")}
-          >
-            <Receipt className="w-4 h-4 mr-2" /> Taxes & Compliance
-          </Button>
-          <Button 
-            variant={activeTab === "hardware" ? "secondary" : "ghost"} 
-            className="w-full justify-start"
-            onClick={() => setActiveTab("hardware")}
-          >
-            <Printer className="w-4 h-4 mr-2" /> Hardware & Printers
-          </Button>
-          <Button 
-            variant={activeTab === "notifications" ? "secondary" : "ghost"} 
-            className="w-full justify-start"
-            onClick={() => setActiveTab("notifications")}
-          >
-            <Bell className="w-4 h-4 mr-2" /> Notifications
-          </Button>
-          <Button 
-            variant={activeTab === "danger" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === 'danger' ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400' : 'text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30'}`}
-            onClick={() => setActiveTab("danger")}
-          >
-            <ShieldAlert className="w-4 h-4 mr-2" /> Danger Zone
-          </Button>
-        </div>
+        <SidebarMenu className="space-y-1">
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              isActive={activeTab === "outlet"} 
+              onClick={() => setActiveTab("outlet")}
+            >
+              <Store /> <span>Outlet Details</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              isActive={activeTab === "taxes"} 
+              onClick={() => setActiveTab("taxes")}
+            >
+              <Receipt /> <span>Taxes & Compliance</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              isActive={activeTab === "hardware"} 
+              onClick={() => setActiveTab("hardware")}
+            >
+              <Printer /> <span>Hardware & Printers</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              isActive={activeTab === "notifications"} 
+              onClick={() => setActiveTab("notifications")}
+            >
+              <Bell /> <span>Notifications</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              isActive={activeTab === "danger"} 
+              onClick={() => setActiveTab("danger")}
+              className={activeTab === 'danger' ? 'bg-red-200 text-red-900 border-red-900 dark:bg-red-900 dark:text-red-100' : 'text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40'}
+            >
+              <ShieldAlert /> <span>Danger Zone</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
 
         {/* Settings Content Area */}
         <div className="md:col-span-3">
