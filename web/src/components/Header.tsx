@@ -9,6 +9,7 @@ import { AlertCircle, CheckCircle2, WifiOff, User } from 'lucide-react';
 import { StockoutModal } from './StockoutModal';
 import { ManagerPinModal } from './ManagerPinModal';
 import { GlobalSearch } from './GlobalSearch';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 export function Header() {
   const router = useRouter();
@@ -82,11 +83,14 @@ export function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center justify-between px-6">
-        <div className="flex flex-col">
-          <h1 className="text-xl font-bold tracking-tight">Easy Restaurant SPA</h1>
-          <span className="text-xs text-muted-foreground">Casual Dining • Koramangala</span>
+    <header className="sticky top-0 z-50 w-full border-b-2 border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-16 items-center justify-between px-6 gap-4">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <div className="flex flex-col hidden sm:flex">
+            <h1 className="text-xl font-bold tracking-tight">Easy Restaurant SPA</h1>
+            <span className="text-xs text-muted-foreground font-bold">Casual Dining • Koramangala</span>
+          </div>
         </div>
 
         <div className="flex items-center space-x-4">
