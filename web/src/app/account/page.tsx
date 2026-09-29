@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
-import { User, Settings, Users, Save, Mail, UserPlus, Trash2 } from "lucide-react";
+import { User, Settings, Users, Save, Mail, UserPlus, Trash2, Crown, Shield, Clock } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage, AvatarBadge } from "@/components/ui/avatar";
 
 export default function AccountPage() {
   return (
@@ -77,9 +78,9 @@ function AccountContent() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-4 mb-6">
-                  <div className="w-20 h-20 rounded-full bg-main flex items-center justify-center border-2 border-border shadow-shadow">
-                    <span className="text-2xl font-heading font-bold text-main-foreground">RA</span>
-                  </div>
+                  <Avatar className="size-20 shadow-shadow">
+                    <AvatarFallback className="text-2xl font-heading bg-main text-main-foreground">RA</AvatarFallback>
+                  </Avatar>
                   <Button variant="outline">Change Avatar</Button>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -174,9 +175,12 @@ function AccountContent() {
               <CardContent className="space-y-4">
                 <div className="p-4 border-2 border-border rounded-base flex justify-between items-center bg-background">
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 rounded-full bg-main flex items-center justify-center border-2 border-border">
-                      <span className="font-bold text-main-foreground">RA</span>
-                    </div>
+                    <Avatar className="size-10">
+                      <AvatarFallback className="bg-main text-main-foreground font-bold">RA</AvatarFallback>
+                      <AvatarBadge className="bg-yellow-400">
+                        <Crown className="size-2.5 text-black" />
+                      </AvatarBadge>
+                    </Avatar>
                     <div>
                       <h4 className="font-bold text-sm">Restaurant Admin (You)</h4>
                       <p className="text-xs text-muted-foreground">admin@restaurant.com</p>
@@ -187,9 +191,12 @@ function AccountContent() {
 
                 <div className="p-4 border-2 border-border rounded-base flex justify-between items-center bg-background">
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center border-2 border-border">
-                      <span className="font-bold text-black">SM</span>
-                    </div>
+                    <Avatar className="size-10">
+                      <AvatarFallback className="bg-blue-400 text-black font-bold">SM</AvatarFallback>
+                      <AvatarBadge className="bg-blue-600">
+                        <Shield className="size-2.5 text-white" />
+                      </AvatarBadge>
+                    </Avatar>
                     <div>
                       <h4 className="font-bold text-sm">Store Manager</h4>
                       <p className="text-xs text-muted-foreground">manager@restaurant.com</p>
@@ -205,9 +212,12 @@ function AccountContent() {
 
                 <div className="p-4 border-2 border-border rounded-base flex justify-between items-center bg-background opacity-60">
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center border-2 border-border">
-                      <span className="font-bold text-muted-foreground">?</span>
-                    </div>
+                    <Avatar className="size-10">
+                      <AvatarFallback className="bg-gray-200 dark:bg-gray-800 text-muted-foreground font-bold">?</AvatarFallback>
+                      <AvatarBadge className="bg-gray-400">
+                        <Clock className="size-2.5 text-white" />
+                      </AvatarBadge>
+                    </Avatar>
                     <div>
                       <h4 className="font-bold text-sm">Waiting for invite acceptance</h4>
                       <p className="text-xs text-muted-foreground">accountant@restaurant.com</p>

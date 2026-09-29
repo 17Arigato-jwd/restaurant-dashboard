@@ -963,3 +963,50 @@ toast.add({
   description: "Your profile has been updated."
 })
 ```
+
+---
+
+## 16. Avatar Component
+
+**File:** `components/ui/avatar.tsx`
+
+```tsx
+"use client"
+
+import * as AvatarPrimitive from "@radix-ui/react-avatar"
+
+import * as React from "react"
+import { cn } from "@/lib/utils"
+
+const Avatar = React.forwardRef<
+  React.ElementRef<typeof AvatarPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Root
+    ref={ref}
+    className={cn(
+      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-border",
+      className,
+    )}
+    {...props}
+  />
+))
+Avatar.displayName = AvatarPrimitive.Root.displayName
+
+// ... (AvatarImage, AvatarFallback)
+
+function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
+  return (
+    <span
+      className={cn(
+        "absolute right-0 bottom-0 z-10 flex size-3 items-center justify-center rounded-full border-2 border-border bg-main text-[8px] text-main-foreground",
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+// AvatarGroup, AvatarGroupCount...
+
+export { Avatar, AvatarImage, AvatarFallback, AvatarBadge, AvatarGroup, AvatarGroupCount }
+```

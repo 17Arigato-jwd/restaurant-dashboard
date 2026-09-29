@@ -11,6 +11,7 @@ import { ManagerPinModal } from './ManagerPinModal';
 import { GlobalSearch } from './GlobalSearch';
 import { GlobalBreadcrumb } from './GlobalBreadcrumb';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { toast } from '@/components/ui/toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
