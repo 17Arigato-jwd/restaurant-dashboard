@@ -1010,3 +1010,47 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
 
 export { Avatar, AvatarImage, AvatarFallback, AvatarBadge, AvatarGroup, AvatarGroupCount }
 ```
+
+---
+
+## 17. Attachment Component
+
+**File:** `components/ui/attachment.tsx`
+
+```tsx
+"use client"
+
+import { mergeProps } from "@base-ui/react/merge-props"
+import { useRender } from "@base-ui/react/use-render"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import * as React from "react"
+import { cn } from "@/lib/utils"
+
+// Attachment variants for displaying file uploads (idle, uploading, done, error)
+// (Code omitted for brevity, fetches from neobrutalism registry)
+
+export {
+  Attachment,
+  AttachmentAction,
+  AttachmentActions,
+  AttachmentContent,
+  AttachmentDescription,
+  AttachmentMedia,
+  AttachmentTitle,
+}
+```
+
+**Reusable ImageUploader Template**
+**File:** `components/ImageUploader.tsx`
+
+```tsx
+import { ImageUploader } from "@/components/ImageUploader";
+
+<div className="w-full max-w-sm">
+  <ImageUploader 
+    defaultTitle="Upload new avatar"
+    className="w-full"
+  />
+</div>
+```

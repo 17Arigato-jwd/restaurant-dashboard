@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ImageUploader } from "@/components/ImageUploader";
+import { RolesManagement } from "@/components/RolesManagement";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -68,6 +70,14 @@ export default function SettingsPage() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton 
+              isActive={activeTab === "roles"} 
+              onClick={() => setActiveTab("roles")}
+            >
+              <ShieldAlert className="w-4 h-4" /> <span>Roles & Permissions</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
               isActive={activeTab === "danger"} 
               onClick={() => setActiveTab("danger")}
               className={activeTab === 'danger' ? 'bg-red-200 text-red-900 border-red-900 dark:bg-red-900 dark:text-red-100' : 'text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40'}
@@ -87,6 +97,14 @@ export default function SettingsPage() {
                 <CardDescription>Primary details displayed on bills and customer receipts.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="mb-6 w-full max-w-sm">
+                  <Label className="mb-2 block text-sm font-bold">Restaurant Logo</Label>
+                  <ImageUploader 
+                    defaultTitle="Upload restaurant logo"
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">This logo will be printed on bills and receipts.</p>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Restaurant Name</Label>
@@ -207,6 +225,17 @@ export default function SettingsPage() {
                   </div>
                   <Switch defaultChecked />
                 </div>
+              </CardContent>
+            </Card>
+          )}
+          {activeTab === "roles" && (
+            <Card className="animate-in fade-in duration-300 slide-in-from-right-4">
+              <CardHeader>
+                <CardTitle>Roles & Permissions</CardTitle>
+                <CardDescription>Manage user roles and authorization levels.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RolesManagement />
               </CardContent>
             </Card>
           )}

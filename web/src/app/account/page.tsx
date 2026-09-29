@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { User, Settings, Users, Save, Mail, UserPlus, Trash2, Crown, Shield, Clock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage, AvatarBadge } from "@/components/ui/avatar";
+import { ImageUploader } from "@/components/ImageUploader";
+import { TeamManagement } from "@/components/TeamManagement";
 
 export default function AccountPage() {
   return (
@@ -77,11 +79,17 @@ function AccountContent() {
                 <CardDescription>Update your personal information and contact details.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center space-x-4 mb-6">
-                  <Avatar className="size-20 shadow-shadow">
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6 mb-6">
+                  <Avatar className="size-20 shadow-shadow shrink-0">
                     <AvatarFallback className="text-2xl font-heading bg-main text-main-foreground">RA</AvatarFallback>
                   </Avatar>
-                  <Button variant="outline">Change Avatar</Button>
+                  <div className="w-full max-w-sm">
+                    <Label className="mb-2 block text-sm font-bold">Profile Picture</Label>
+                    <ImageUploader 
+                      defaultTitle="Upload new avatar"
+                      className="w-full"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -164,70 +172,11 @@ function AccountContent() {
           {activeTab === "team" && (
             <Card className="animate-in fade-in duration-300 slide-in-from-right-4 bg-secondary-background">
               <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>Team Management</CardTitle>
-                    <CardDescription>Manage who has access to your restaurant dashboard.</CardDescription>
-                  </div>
-                  <Button onClick={() => toast.add({ type: "success", title: "Invite Sent", description: "Invitation sent successfully." })}><UserPlus className="w-4 h-4 mr-2" /> Invite Member</Button>
-                </div>
+                <CardTitle>Team Management</CardTitle>
+                <CardDescription>Manage who has access to your restaurant dashboard.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 border-2 border-border rounded-base flex justify-between items-center bg-background">
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="size-10">
-                      <AvatarFallback className="bg-main text-main-foreground font-bold">RA</AvatarFallback>
-                      <AvatarBadge className="bg-yellow-400">
-                        <Crown className="size-2.5 text-black" />
-                      </AvatarBadge>
-                    </Avatar>
-                    <div>
-                      <h4 className="font-bold text-sm">Restaurant Admin (You)</h4>
-                      <p className="text-xs text-muted-foreground">admin@restaurant.com</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-main text-main-foreground">Owner</Badge>
-                </div>
-
-                <div className="p-4 border-2 border-border rounded-base flex justify-between items-center bg-background">
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="size-10">
-                      <AvatarFallback className="bg-blue-400 text-black font-bold">SM</AvatarFallback>
-                      <AvatarBadge className="bg-blue-600">
-                        <Shield className="size-2.5 text-white" />
-                      </AvatarBadge>
-                    </Avatar>
-                    <div>
-                      <h4 className="font-bold text-sm">Store Manager</h4>
-                      <p className="text-xs text-muted-foreground">manager@restaurant.com</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline">Manager</Badge>
-                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950" onClick={() => toast.add({ type: "warning", title: "Removed", description: "Manager access revoked." })}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="p-4 border-2 border-border rounded-base flex justify-between items-center bg-background opacity-60">
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="size-10">
-                      <AvatarFallback className="bg-gray-200 dark:bg-gray-800 text-muted-foreground font-bold">?</AvatarFallback>
-                      <AvatarBadge className="bg-gray-400">
-                        <Clock className="size-2.5 text-white" />
-                      </AvatarBadge>
-                    </Avatar>
-                    <div>
-                      <h4 className="font-bold text-sm">Waiting for invite acceptance</h4>
-                      <p className="text-xs text-muted-foreground">accountant@restaurant.com</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="secondary">Pending</Badge>
-                    <Button variant="ghost" size="sm" onClick={() => toast.add({ type: "info", description: "Invite reminder sent." })}>Resend</Button>
-                  </div>
-                </div>
+              <CardContent>
+                <TeamManagement />
               </CardContent>
             </Card>
           )}
