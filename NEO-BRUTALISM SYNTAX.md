@@ -795,3 +795,45 @@ function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxP
 
 export { Checkbox }
 ```
+
+---
+
+## 12. Select Component
+
+**File:** `components/ui/select.tsx`
+
+```tsx
+"use client"
+
+import { Select as SelectPrimitive } from "@base-ui/react/select"
+import { Check, ChevronDown, ChevronUp } from "lucide-react"
+
+import * as React from "react"
+import { cn } from "@/lib/utils"
+
+const Select = SelectPrimitive.Root
+
+// Uses Neobrutalist borders and shadows on the popup and inputs
+// (Code omitted for brevity, fetches from neobrutalism registry)
+
+export { Select }
+```
+
+## 13. Chart Component
+
+**File:** `components/ui/chart.tsx`
+
+```tsx
+"use client"
+
+import * as RechartsPrimitive from "recharts"
+import type { TooltipValueType } from "recharts"
+
+import * as React from "react"
+import { cn } from "@/lib/utils"
+
+// Standard Recharts wrapper with tailwind CSS variables mapped
+// (Code omitted for brevity, fetches from neobrutalism registry)
+
+export { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent }
+```
