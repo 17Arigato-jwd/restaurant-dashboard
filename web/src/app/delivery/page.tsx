@@ -191,6 +191,56 @@ export default function DeliveryManagerPage() {
         </CardContent>
       </Card>
       
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Active Deliveries</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Order #1042</CardTitle>
+              <CardDescription>Platform: Zomato</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 font-bold">
+              <p>Client: Rahul Sharma</p>
+              <p>Food: 2x Butter Chicken, 4x Garlic Naan</p>
+              <p className="text-main">Status: Driver 2 mins away</p>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full">Call Driver</Button>
+            </CardFooter>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Order #1043</CardTitle>
+              <CardDescription>Platform: Swiggy</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 font-bold">
+              <p>Client: Priya Patel</p>
+              <p>Food: 1x Paneer Tikka, 1x Veg Biryani</p>
+              <p className="text-main">Status: Driver at Restaurant</p>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full">Mark Picked Up</Button>
+            </CardFooter>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Order #1044</CardTitle>
+              <CardDescription>Platform: ONDC</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 font-bold">
+              <p>Client: Amit Kumar</p>
+              <p>Food: 1x Masala Dosa, 2x Filter Coffee</p>
+              <p className="text-main">Status: Out for Delivery</p>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full">Track Live</Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+      
       <div className="flex justify-end pt-4">
         <Button onClick={() => {
            // Simulate direct POS injection

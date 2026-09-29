@@ -8,6 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
 export default function LoginPage() {
   const router = useRouter();
   const { setSession } = useAppStore();
@@ -55,59 +64,74 @@ export default function LoginPage() {
 
   return (
     <div className="absolute inset-0 z-[100] flex items-center justify-center bg-muted/20 backdrop-blur-sm">
-      <div className="flex flex-col items-center space-y-6 bg-background p-10 rounded-xl shadow-lg border w-full max-w-md">
-        <div className="text-center w-full">
-          <h1 className="text-2xl font-bold">Easy Restaurant SPA</h1>
-          <p className="text-muted-foreground mt-2">
-            {isLogin ? "Sign in to your account" : "Register new owner account"}
-          </p>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="w-full space-y-4">
-          {error && (
-            <div className={`p-3 text-sm rounded-md ${error.includes('successful') ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
-              {error}
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>{isLogin ? "Login to your account" : "Register new account"}</CardTitle>
+          <CardDescription>
+            {isLogin ? "Enter your email below to login" : "Enter your email below to register"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit}>
+            <div className="flex flex-col gap-6">
+              {error && (
+                <div className={`p-3 text-sm rounded-md border-2 border-border font-bold shadow-[2px_2px_0px_0px_var(--border)] ${error.includes('successful') ? 'bg-green-300 text-black' : 'bg-red-400 text-black'}`}>
+                  {error}
+                </div>
+              )}
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <Label htmlFor="password">Password</Label>
+                  {isLogin && (
+                    <a
+                      href="#"
+                      className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                    >
+                      Forgot your password?
+                    </a>
+                  )}
+                </div>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required 
+                />
+              </div>
             </div>
-          )}
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email" 
-              type="email" 
-              placeholder="owner@restaurant.com" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password" 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required 
-            />
-          </div>
-          
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Processing..." : (isLogin ? "Sign In" : "Register Account")}
+          </form>
+        </CardContent>
+        <CardFooter className="flex-col gap-2 border-t-2 border-border pt-4 bg-transparent">
+          <Button type="submit" className="w-full" disabled={loading} onClick={handleSubmit}>
+            {loading ? "Processing..." : (isLogin ? "Login" : "Register")}
           </Button>
-        </form>
-
-        <div className="text-center text-sm">
-          <button 
-            type="button" 
-            onClick={() => { setIsLogin(!isLogin); setError(""); }} 
-            className="text-primary hover:underline"
-          >
-            {isLogin ? "Need an account? Register here." : "Already have an account? Sign in."}
-          </button>
-        </div>
-      </div>
+          <Button variant="neutral" type="button" className="w-full">
+            {isLogin ? "Login with Google" : "Register with Google"}
+          </Button>
+          <div className="mt-4 text-center text-sm font-bold">
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <button
+              type="button"
+              onClick={() => { setIsLogin(!isLogin); setError(""); }}
+              className="underline underline-offset-4"
+            >
+              {isLogin ? "Sign up" : "Sign in"}
+            </button>
+          </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
