@@ -379,3 +379,48 @@ export default function SwitchDemo() {
   )
 }
 ```
+
+---
+
+## 6. Sidebar Component
+
+**File:** `components/ui/sidebar.tsx`
+(Requires `@base-ui`, `Sheet`, `Skeleton`, `Tooltip`, and a `use-mobile` hook)
+
+*Due to its length, the full sidebar component includes `SidebarProvider`, `SidebarInset`, `Sidebar`, `SidebarMenu`, `SidebarMenuItem`, `SidebarMenuButton` and relies heavily on Context to manage state and mobile collapsing.*
+
+---
+
+## 7. Input Component
+
+**File:** `components/ui/input.tsx`
+
+```tsx
+import * as React from "react"
+import { cn } from "@/lib/utils"
+
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "flex h-10 w-full rounded-base border-2 border-border bg-secondary-background selection:bg-main selection:text-main-foreground px-3 py-2 text-sm font-base text-foreground file:border-0 file:bg-transparent file:text-sm file:font-heading placeholder:text-foreground/50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Input }
+```
+
+**Input Demo:**
+```tsx
+import { Input } from "@/components/ui/input"
+
+export default function InputDemo() {
+  return <Input className="w-[200px]" type="email" placeholder="Email" />
+}
+```
