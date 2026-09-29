@@ -9,6 +9,7 @@ import { AlertCircle, CheckCircle2, WifiOff, User, Settings, Users, Sun, Moon, L
 import { StockoutModal } from './StockoutModal';
 import { ManagerPinModal } from './ManagerPinModal';
 import { GlobalSearch } from './GlobalSearch';
+import { GlobalBreadcrumb } from './GlobalBreadcrumb';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import {
   DropdownMenu,
@@ -83,9 +84,8 @@ export function Header() {
       <div className="flex h-16 items-center justify-between px-6 gap-4">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
-          <div className="flex flex-col hidden sm:flex">
-            <h1 className="text-xl font-bold tracking-tight">Easy Restaurant SPA</h1>
-            <span className="text-xs text-muted-foreground font-bold">Casual Dining • Koramangala</span>
+          <div className="flex flex-col hidden sm:flex border-l-2 border-border pl-4">
+            <GlobalBreadcrumb />
           </div>
         </div>
 
