@@ -24,6 +24,9 @@ interface AppState {
   // User Session
   token: string | null;
   role: string | null;
+  currentUser: any | null;
+  setCurrentUser: (user: any | null) => void;
+  refreshCurrentUser: () => Promise<void>;
   setSession: (token: string, role: string) => void;
   logout: () => void;
 
@@ -77,8 +80,30 @@ export const useAppStore = create<AppState>()(
       // Auth
       token: null,
       role: null,
+      currentUser: null,
+      setCurrentUser: (user) => set({ currentUser: user }),
+      refreshCurrentUser: async () => {
+        try {
+          const res = await fetch("/api/team/u1");
+          if (res.ok) {
+            const data = await res.json();
+            set({ currentUser: data });
+          }
+        } catch (e) { console.error(e); }
+      },
       setSession: (token, role) => set({ token, role }),
-      logout: () => set({ token: null, role: null, isManagerAuthorized: false }),
+      logout: () => set({ token: null, role: null,
+      currentUser: null,
+      setCurrentUser: (user) => set({ currentUser: user }),
+      refreshCurrentUser: async () => {
+        try {
+          const res = await fetch("/api/team/u1");
+          if (res.ok) {
+            const data = await res.json();
+            set({ currentUser: data });
+          }
+        } catch (e) { console.error(e); }
+      }, isManagerAuthorized: false }),
 
       isManagerAuthorized: false,
       setManagerAuthorized: (status) => set({ isManagerAuthorized: status }),
@@ -142,7 +167,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'restaurant-storage',
-      partialize: (state) => ({ token: state.token, role: state.role }), // only persist auth so tables reset on reload for dev
+      partialize: (state) => ({ token: state.token, role: state.role, currentUser: state.currentUser }), // only persist auth so tables reset on reload for dev
     }
   )
 );

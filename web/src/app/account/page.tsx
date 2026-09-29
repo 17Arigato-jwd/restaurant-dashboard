@@ -14,6 +14,7 @@ import { User, Settings, Users, Save, Mail, UserPlus, Trash2, Crown, Shield, Clo
 import { Avatar, AvatarFallback, AvatarImage, AvatarBadge } from "@/components/ui/avatar";
 import { ImageUploader } from "@/components/ImageUploader";
 import { TeamManagement } from "@/components/TeamManagement";
+import { ProfileForm } from "@/components/ProfileForm";
 
 export default function AccountPage() {
   return (
@@ -72,49 +73,7 @@ function AccountContent() {
         {/* Content Area */}
         <div className="md:col-span-3 space-y-6">
           
-          {activeTab === "profile" && (
-            <Card className="animate-in fade-in duration-300 slide-in-from-right-4 bg-secondary-background">
-              <CardHeader>
-                <CardTitle>Profile Details</CardTitle>
-                <CardDescription>Update your personal information and contact details.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6 mb-6">
-                  <Avatar className="size-20 shadow-shadow shrink-0">
-                    <AvatarFallback className="text-2xl font-heading bg-main text-main-foreground">RA</AvatarFallback>
-                  </Avatar>
-                  <div className="w-full max-w-sm">
-                    <Label className="mb-2 block text-sm font-bold">Profile Picture</Label>
-                    <ImageUploader 
-                      defaultTitle="Upload new avatar"
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>First Name</Label>
-                    <Input defaultValue="Restaurant" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Last Name</Label>
-                    <Input defaultValue="Admin" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Email Address</Label>
-                  <Input defaultValue="admin@restaurant.com" type="email" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Phone Number</Label>
-                  <Input defaultValue="+91 98765 43210" />
-                </div>
-              </CardContent>
-              <CardFooter className="border-t-2 border-border bg-muted/20 px-6 py-4">
-                <Button onClick={() => toast.add({ type: "success", title: "Success", description: "Profile details updated." })}><Save className="w-4 h-4 mr-2" /> Save Profile</Button>
-              </CardFooter>
-            </Card>
-          )}
+          {activeTab === "profile" && <ProfileForm />}
 
           {activeTab === "settings" && (
             <Card className="animate-in fade-in duration-300 slide-in-from-right-4 bg-secondary-background">

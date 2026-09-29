@@ -49,3 +49,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   db.deleteUser(id);
   return new NextResponse(null, { status: 204 });
 }
+
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const user = db.getUser(resolvedParams.id);
+  if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json(user);
+}

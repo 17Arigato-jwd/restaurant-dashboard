@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CheckCircle2, WifiOff, User, Settings, Users, Sun, Moon, LogOut } from 'lucide-react';
 import { StockoutModal } from './StockoutModal';
@@ -44,12 +45,17 @@ export function Header() {
     triggerEmergencyPause,
     cancelEmergencyPause,
     tickEmergencyPause,
-    logout
+    logout,
+    currentUser,
+    refreshCurrentUser
   } = useAppStore();
 
   const [isStockoutOpen, setIsStockoutOpen] = useState(false);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [isLogoutDrawerOpen, setIsLogoutDrawerOpen] = useState(false);
+  useEffect(() => {
+    
+  }, [refreshCurrentUser]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -153,8 +159,19 @@ export function Header() {
 
           <div className="relative border-l-2 pl-4 border-border">
             <DropdownMenu>
-              <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="rounded-full bg-muted" />}>
-                <User className="w-5 h-5" />
+              <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="rounded-full overflow-hidden" />}>
+                {currentUser?.avatarUrl ? (
+                  <Avatar className="w-full h-full">
+                    <AvatarImage src={currentUser.avatarUrl} />
+                    <AvatarFallback>{currentUser.name?.substring(0, 2).toUpperCase() || 'US'}</AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <Avatar className="w-full h-full">
+                    <AvatarFallback className="bg-main text-main-foreground font-bold">
+                      {currentUser?.name?.substring(0, 2).toUpperCase() || 'US'}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
