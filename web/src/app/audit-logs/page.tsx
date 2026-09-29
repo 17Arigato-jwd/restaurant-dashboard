@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Shield, AlertOctagon, Key, Trash2, Ban, Search, UserMinus } from "lucide-react";
+import { DatePickerWithRange } from "@/components/DatePicker";
+import { DateRange } from "react-day-picker";
+import { addDays } from "date-fns";
 
 // Mock Data
 const AUDIT_LOGS = [
@@ -25,6 +28,10 @@ const STAFF_METRICS = [
 
 export default function AuditLogsPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: addDays(new Date(), 7),
+  });
 
   const filteredLogs = AUDIT_LOGS.filter(log => 
     log.user.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -92,19 +99,22 @@ export default function AuditLogsPage() {
         
         {/* Audit Log Table */}
         <Card className="lg:col-span-3">
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4">
             <div>
               <CardTitle>Timestamped Action Trail</CardTitle>
               <CardDescription>Immutable log of all sensitive POS operations.</CardDescription>
             </div>
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search logs..." 
-                className="pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-[300px]" />
+              <div className="relative w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search logs..." 
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
           </CardHeader>
           <CardContent>

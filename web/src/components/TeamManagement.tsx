@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage, AvatarBadge } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Crown, Shield, Clock, Trash2, UserPlus, FileEdit } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogMedia } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/toast";
 import { ImageUploader } from "@/components/ImageUploader";
 import { useAppStore } from "@/store/useAppStore";
@@ -134,14 +135,26 @@ export function TeamManagement() {
             </Badge>
 
             {user.roleId !== currentRoleId && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950" 
-                onClick={() => handleDeleteUser(user.id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950" />} >
+                  <Trash2 className="w-4 h-4" />
+                </AlertDialogTrigger>
+                <AlertDialogContent size="sm">
+                  <AlertDialogHeader>
+                    <AlertDialogMedia className="bg-black text-white">
+                      <Trash2 className="w-6 h-6" />
+                    </AlertDialogMedia>
+                    <AlertDialogTitle>Delete user?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete this user from the team. They will no longer have access to the dashboard.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-red-600 hover:bg-red-700 text-white">Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         </div>

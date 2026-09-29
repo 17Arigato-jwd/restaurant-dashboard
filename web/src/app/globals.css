@@ -198,3 +198,16 @@
     scrollbar-color: var(--sb-thumb-color) var(--sb-track-color);
   }
 }
+.theme-rose {
+  --background: hsl(355, 100%, 94%);
+  --secondary-background: oklch(100% 0 0);
+  --foreground: oklch(0% 0 0);
+  --main-foreground: oklch(0% 0 0);
+  --main: hsl(353, 100%, 70%);
+  --chart-1: #FF6678;
+  --chart-2: #7A83FF;
+  --chart-3: #FACC00;
+  --chart-4: #00D696;
+  --chart-5: #5294FF;
+  --chart-active-dot: #000;
+}

@@ -1054,3 +1054,123 @@ import { ImageUploader } from "@/components/ImageUploader";
   />
 </div>
 ```
+
+---
+
+## 18. Calendar & DatePicker
+
+**File:** `components/ui/calendar.tsx`, `components/ui/popover.tsx`, `components/DatePicker.tsx`
+
+**Dependencies:** `react-day-picker`, `date-fns`
+
+**Usage:**
+
+```tsx
+import { DatePicker, DatePickerWithRange } from "@/components/DatePicker";
+import { DateRange } from "react-day-picker";
+import { addDays } from "date-fns";
+
+export function DateFilters() {
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: addDays(new Date(), 7),
+  });
+
+  return (
+    <div className="flex gap-4">
+      <DatePicker date={date} setDate={setDate} />
+      <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+    </div>
+  )
+}
+```
+
+---
+
+## 19. Alert
+
+**File:** `components/ui/alert.tsx`
+
+**Variants:** `default`, `destructive`
+
+**Usage:**
+
+```tsx
+import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+export function AlertExamples() {
+  return (
+    <div className="space-y-4">
+      <Alert>
+        <CheckCircle2Icon />
+        <AlertTitle>Success! Your changes have been saved</AlertTitle>
+        <AlertDescription>
+          This is an alert with icon, title and description.
+        </AlertDescription>
+      </Alert>
+
+      <Alert variant="destructive">
+        <AlertCircleIcon />
+        <AlertTitle>Something went wrong!</AlertTitle>
+        <AlertDescription>
+          Your session has expired. Please log in again.
+        </AlertDescription>
+      </Alert>
+    </div>
+  )
+}
+```
+
+---
+
+## 20. Alert Dialog
+
+**File:** `components/ui/alert-dialog.tsx`
+
+**Note:** The `.theme-rose` class is applied to `<AlertDialogContent>` which alters the default green theme variables to a specialized Rose/Red Danger theme specifically intended for destructive admin actions.
+
+**Usage:**
+
+```tsx
+import { Trash2Icon } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+
+export function AlertDialogDestructiveDemo() {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger render={<Button />}>Delete</AlertDialogTrigger>
+      <AlertDialogContent size="sm">
+        <AlertDialogHeader>
+          <AlertDialogMedia className="bg-black text-white">
+            <Trash2Icon />
+          </AlertDialogMedia>
+          <AlertDialogTitle>Delete user?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently delete this user.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white">
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+```

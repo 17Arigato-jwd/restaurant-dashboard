@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogMedia } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/components/ImageUploader";
 import { RolesManagement } from "@/components/RolesManagement";
@@ -251,65 +253,70 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
+                <Alert variant="destructive">
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>Warning</AlertTitle>
+                  <AlertDescription>
+                    Actions taken in this section are immediate and permanent. Please proceed with caution.
+                  </AlertDescription>
+                </Alert>
                 <div className="flex items-center justify-between p-4 border-2 border-border bg-secondary-background rounded-base">
                   <div>
                     <h4 className="font-bold text-sm">Factory Reset POS Data</h4>
                     <p className="text-xs text-muted-foreground mt-1">Erases all offline local storage, tables, and mock data.</p>
                   </div>
-                  <Drawer>
-                    <DrawerTrigger render={<Button variant="destructive" size="sm" />}>
+                  <AlertDialog>
+                    <AlertDialogTrigger render={<Button variant="destructive" size="sm" />}>
                       <Trash2 className="w-4 h-4 mr-2" /> Reset Local Data
-                    </DrawerTrigger>
-                    <DrawerContent>
-                      <div className="mx-auto w-[400px]">
-                        <DrawerHeader>
-                          <DrawerTitle>Are you absolutely sure?</DrawerTitle>
-                          <DrawerDescription>
-                            This will permanently delete your POS data. Please type <span className="font-bold text-foreground">factory-reset</span> to confirm.
-                          </DrawerDescription>
-                        </DrawerHeader>
-                        <div className="px-4 py-4">
-                          <Input placeholder="factory-reset" />
-                        </div>
-                        <DrawerFooter className="grid grid-cols-2">
-                          <Button variant="destructive">Reset Data</Button>
-                          <DrawerClose render={<Button className="bg-secondary-background text-foreground" variant="noShadow" />}>
-                            Cancel
-                          </DrawerClose>
-                        </DrawerFooter>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent size="sm">
+                      <AlertDialogHeader>
+                        <AlertDialogMedia className="bg-black text-white">
+                          <Trash2 className="w-6 h-6" />
+                        </AlertDialogMedia>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete your POS data. Please type <span className="font-bold text-foreground">factory-reset</span> to confirm.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <div className="px-4 py-4">
+                        <Input placeholder="factory-reset" />
                       </div>
-                    </DrawerContent>
-                  </Drawer>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white">Reset Data</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
                 <div className="flex items-center justify-between p-4 border-2 border-border bg-secondary-background rounded-base">
                   <div>
                     <h4 className="font-bold text-sm">Force Shut Down API Bridge</h4>
                     <p className="text-xs text-muted-foreground mt-1">Disconnects Aggregators & Tally immediately.</p>
                   </div>
-                  <Drawer>
-                    <DrawerTrigger render={<Button variant="destructive" size="sm" />}>
+                  <AlertDialog>
+                    <AlertDialogTrigger render={<Button variant="destructive" size="sm" />}>
                       <PowerOff className="w-4 h-4 mr-2" /> Disconnect APIs
-                    </DrawerTrigger>
-                    <DrawerContent>
-                      <div className="mx-auto w-[400px]">
-                        <DrawerHeader>
-                          <DrawerTitle>Disconnect API Bridge?</DrawerTitle>
-                          <DrawerDescription>
-                            This will halt all orders from Zomato and Swiggy. Type <span className="font-bold text-foreground">disconnect</span> to confirm.
-                          </DrawerDescription>
-                        </DrawerHeader>
-                        <div className="px-4 py-4">
-                          <Input placeholder="disconnect" />
-                        </div>
-                        <DrawerFooter className="grid grid-cols-2">
-                          <Button variant="destructive">Disconnect</Button>
-                          <DrawerClose render={<Button className="bg-secondary-background text-foreground" variant="noShadow" />}>
-                            Cancel
-                          </DrawerClose>
-                        </DrawerFooter>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent size="sm">
+                      <AlertDialogHeader>
+                        <AlertDialogMedia className="bg-black text-white">
+                          <PowerOff className="w-6 h-6" />
+                        </AlertDialogMedia>
+                        <AlertDialogTitle>Disconnect API Bridge?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will halt all orders from Zomato and Swiggy. Type <span className="font-bold text-foreground">disconnect</span> to confirm.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <div className="px-4 py-4">
+                        <Input placeholder="disconnect" />
                       </div>
-                    </DrawerContent>
-                  </Drawer>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white">Disconnect</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardContent>
             </Card>

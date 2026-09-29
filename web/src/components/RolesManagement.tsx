@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogMedia } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/toast";
 import { useAppStore } from "@/store/useAppStore";
 
@@ -95,15 +96,26 @@ export function RolesManagement() {
               </p>
             </div>
             
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950" 
-              onClick={() => handleDeleteRole(role.id)}
-              disabled={role.level <= 2}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950" disabled={role.level <= 2} />} >
+                <Trash2 className="w-4 h-4" />
+              </AlertDialogTrigger>
+              <AlertDialogContent size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogMedia className="bg-black text-white">
+                    <Trash2 className="w-6 h-6" />
+                  </AlertDialogMedia>
+                  <AlertDialogTitle>Delete role?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete the <strong>{role.name}</strong> role. Any users currently assigned to this role will lose their permissions.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDeleteRole(role.id)} className="bg-red-600 hover:bg-red-700 text-white">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         ))}
       </div>

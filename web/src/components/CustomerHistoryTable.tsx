@@ -23,6 +23,9 @@ import {
 import { ArrowUpDown, ChevronDown, MoreHorizontal, CalendarClock } from "lucide-react"
 
 import * as React from "react"
+import { DatePickerWithRange } from "@/components/DatePicker";
+import { DateRange } from "react-day-picker";
+import { addDays } from "date-fns";
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -221,6 +224,7 @@ export function CustomerHistoryTable() {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<ColumnVisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>({ from: new Date(), to: addDays(new Date(), 7) })
 
   const table = useTable({
     features,
@@ -245,9 +249,7 @@ export function CustomerHistoryTable() {
           <h2 className="text-2xl font-black font-heading tracking-tight">Customer History</h2>
           <p className="text-muted-foreground font-bold mt-1">Review past orders, entry/exit times, and contact details.</p>
         </div>
-        <Button className="bg-main text-main-foreground hover:bg-main/90 border-2 border-border shadow-shadow">
-          <CalendarClock className="w-4 h-4 mr-2" /> Select Date Range
-        </Button>
+        <DatePickerWithRange date={dateRange} setDate={setDateRange} className="bg-main text-main-foreground" />
       </div>
 
       <div className="flex items-center py-4 gap-4">
