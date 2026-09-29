@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
 import { useAppStore } from '@/store/useAppStore';
@@ -10,6 +10,15 @@ import { StockoutModal } from './StockoutModal';
 import { ManagerPinModal } from './ManagerPinModal';
 import { GlobalSearch } from './GlobalSearch';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function Header() {
   const router = useRouter();
@@ -29,8 +38,6 @@ export function Header() {
 
   const [isStockoutOpen, setIsStockoutOpen] = useState(false);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -41,16 +48,6 @@ export function Header() {
     }
     return () => clearInterval(interval);
   }, [isEmergencyPaused, pauseTimerRemaining, tickEmergencyPause]);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
-        setIsProfileOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -70,17 +67,6 @@ export function Header() {
     setIsPinModalOpen(false);
     triggerEmergencyPause();
   };
-
-  const profileMenuItems = [
-    { label: "Your Profile", action: () => router.push('/restaurant-settings') },
-    { label: "Account Settings", action: () => router.push('/restaurant-settings') },
-    { label: "Account Notification", action: () => router.push('/restaurant-settings') },
-    { label: "Team", action: () => router.push('/restaurant-settings') },
-    { label: "Support", action: () => alert('Support module coming soon!') },
-    { label: "Theme Toggle", action: () => setTheme(theme === 'dark' ? 'light' : 'dark') },
-    { label: "Switch Account", action: () => { logout(); router.push('/login'); } },
-    { label: "Sign out", action: () => { logout(); router.push('/login'); } },
-  ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b-2 border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -136,34 +122,24 @@ export function Header() {
             </Button>
           </div>
 
-          <div className="relative border-l pl-4 border-border" ref={profileRef}>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full bg-muted"
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-            >
-              <User className="w-5 h-5" />
-            </Button>
-
-            {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-56 rounded-md border bg-background shadow-lg ring-1 ring-black ring-opacity-5">
-                <div className="py-1">
-                  {profileMenuItems.map((item, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        item.action();
-                        setIsProfileOpen(false);
-                      }}
-                      className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted"
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="relative border-l-2 pl-4 border-border">
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="rounded-full bg-muted" />}>
+                <User className="w-5 h-5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={() => router.push('/restaurant-settings')}>Profile</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/restaurant-settings')}>Account Settings</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/restaurant-settings')}>Team</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>Toggle Theme</DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => { logout(); router.push('/login'); }}>Log out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
