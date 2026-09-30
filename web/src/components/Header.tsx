@@ -1,17 +1,19 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTheme } from '@/components/ThemeProvider';
+import { useTheme } from 'next-themes';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle2, WifiOff, User } from 'lucide-react';
+import { AlertCircle, CheckCircle2, WifiOff, User, Sun, Moon } from 'lucide-react';
 import { StockoutModal } from './StockoutModal';
 import { ManagerPinModal } from './ManagerPinModal';
 
 export function Header() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  // Ensure we don't render theme toggle until hydration is complete
+  const [mounted, setMounted] = useState(false);
   
   const { 
     isTallyConnected, 
@@ -29,6 +31,10 @@ export function Header() {
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -69,13 +75,17 @@ export function Header() {
     triggerEmergencyPause();
   };
 
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
   const profileMenuItems = [
     { label: "Your Profile", action: () => router.push('/restaurant-settings') },
     { label: "Account Settings", action: () => router.push('/restaurant-settings') },
     { label: "Account Notification", action: () => router.push('/restaurant-settings') },
     { label: "Team", action: () => router.push('/restaurant-settings') },
     { label: "Support", action: () => alert('Support module coming soon!') },
-    { label: "Theme Toggle", action: () => setTheme(theme === 'dark' ? 'light' : 'dark') },
+    { label: "Theme Toggle", action: toggleTheme },
     { label: "Switch Account", action: () => { logout(); router.push('/login'); } },
     { label: "Sign out", action: () => { logout(); router.push('/login'); } },
   ];
@@ -128,6 +138,22 @@ export function Header() {
               <AlertCircle className="w-4 h-4 mr-2" />
               {isEmergencyPaused ? `Paused (${formatTime(pauseTimerRemaining)}) - Cancel` : "Panic Pause"}
             </Button>
+            
+            {mounted && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="ml-2 rounded-full border border-border"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? (
+                  <Moon className="h-5 w-5" />
+                ) : (
+                  <Sun className="h-5 w-5" />
+                )}
+              </Button>
+            )}
           </div>
 
           <div className="relative border-l pl-4" ref={profileRef}>
@@ -150,9 +176,12 @@ export function Header() {
                         item.action();
                         setIsProfileOpen(false);
                       }}
-                      className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted"
+                      className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center justify-between"
                     >
                       {item.label}
+                      {item.label === "Theme Toggle" && mounted && (
+                        theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />
+                      )}
                     </button>
                   ))}
                 </div>
