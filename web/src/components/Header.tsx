@@ -1,13 +1,36 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle2, WifiOff, User, Sun, Moon } from 'lucide-react';
+import { AlertCircle, CheckCircle2, WifiOff, User, Settings, Users, Sun, Moon, LogOut } from 'lucide-react';
 import { StockoutModal } from './StockoutModal';
 import { ManagerPinModal } from './ManagerPinModal';
+import { GlobalSearch } from './GlobalSearch';
+import { GlobalBreadcrumb } from './GlobalBreadcrumb';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { toast } from '@/components/ui/toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 
 export function Header() {
   const router = useRouter();
@@ -24,13 +47,17 @@ export function Header() {
     triggerEmergencyPause,
     cancelEmergencyPause,
     tickEmergencyPause,
-    logout
+    logout,
+    currentUser,
+    refreshCurrentUser
   } = useAppStore();
 
   const [isStockoutOpen, setIsStockoutOpen] = useState(false);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const profileRef = useRef<HTMLDivElement>(null);
+  const [isLogoutDrawerOpen, setIsLogoutDrawerOpen] = useState(false);
+  useEffect(() => {
+    
+  }, [refreshCurrentUser]);
 
   useEffect(() => {
     setMounted(true);
@@ -46,59 +73,54 @@ export function Header() {
     return () => clearInterval(interval);
   }, [isEmergencyPaused, pauseTimerRemaining, tickEmergencyPause]);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
-        setIsProfileOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handlePinSuccess = () => {
+    setIsPinModalOpen(false);
+    triggerEmergencyPause();
+    toast.add({ type: "error", title: "Emergency Pause Active", description: "Aggregators suspended.", priority: "high" });
+  };
+
+  const handleCancelPanic = () => {
+    cancelEmergencyPause();
+    toast.add({ type: "success", title: "Emergency Pause Cancelled", description: "Aggregators resumed normally." });
+  };
+
   const handlePanicClick = () => {
     if (isEmergencyPaused) {
-      cancelEmergencyPause();
+      handleCancelPanic();
     } else {
       setIsPinModalOpen(true);
     }
   };
 
-  const handlePinSuccess = () => {
-    setIsPinModalOpen(false);
-    triggerEmergencyPause();
+  const handleThemeToggle = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    toast.add({ description: `Switched to ${newTheme} theme.` });
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+    toast.add({ type: "success", title: "Logged Out", description: "You have been successfully logged out." });
   };
-
-  const profileMenuItems = [
-    { label: "Your Profile", action: () => router.push('/restaurant-settings') },
-    { label: "Account Settings", action: () => router.push('/restaurant-settings') },
-    { label: "Account Notification", action: () => router.push('/restaurant-settings') },
-    { label: "Team", action: () => router.push('/restaurant-settings') },
-    { label: "Support", action: () => alert('Support module coming soon!') },
-    { label: "Theme Toggle", action: toggleTheme },
-    { label: "Switch Account", action: () => { logout(); router.push('/login'); } },
-    { label: "Sign out", action: () => { logout(); router.push('/login'); } },
-  ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center justify-between px-6">
-        <div className="flex flex-col">
-          <h1 className="text-xl font-bold tracking-tight">Easy Restaurant SPA</h1>
-          <span className="text-xs text-muted-foreground">Casual Dining • Koramangala</span>
+    <header className="sticky top-0 z-50 w-full border-b-2 border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-16 items-center justify-between px-6 gap-4">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <div className="flex flex-col hidden sm:flex border-l-2 border-border pl-4">
+            <GlobalBreadcrumb />
+          </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="hidden lg:flex items-center space-x-4">
           <div className="flex items-center space-x-2 border-r pr-4">
             {isTallyConnected ? (
               <Badge variant="outline" className="text-green-600 border-green-600">
@@ -124,19 +146,20 @@ export function Header() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4 ml-auto">
+          <GlobalSearch />
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm" onClick={() => setIsStockoutOpen(true)}>
               Stockout Controls
             </Button>
             <Button 
               variant={isEmergencyPaused ? "destructive" : "default"} 
-              size="sm"
+              size="icon"
               className={!isEmergencyPaused ? "bg-red-600 hover:bg-red-700 text-white" : ""}
               onClick={handlePanicClick}
+              title={isEmergencyPaused ? `Paused (${formatTime(pauseTimerRemaining)}) - Cancel` : "Panic Pause"}
             >
-              <AlertCircle className="w-4 h-4 mr-2" />
-              {isEmergencyPaused ? `Paused (${formatTime(pauseTimerRemaining)}) - Cancel` : "Panic Pause"}
+              <AlertCircle className="w-5 h-5" />
             </Button>
             
             {mounted && (
@@ -156,37 +179,41 @@ export function Header() {
             )}
           </div>
 
-          <div className="relative border-l pl-4" ref={profileRef}>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full bg-muted"
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-            >
-              <User className="w-5 h-5" />
-            </Button>
-
-            {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-56 rounded-md border bg-background shadow-lg ring-1 ring-black ring-opacity-5">
-                <div className="py-1">
-                  {profileMenuItems.map((item, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        item.action();
-                        setIsProfileOpen(false);
-                      }}
-                      className="block w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center justify-between"
-                    >
-                      {item.label}
-                      {item.label === "Theme Toggle" && mounted && (
-                        theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="relative border-l-2 pl-4 border-border">
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="rounded-full overflow-hidden" />}>
+                {currentUser?.avatarUrl ? (
+                  <Avatar className="w-full h-full">
+                    <AvatarImage src={currentUser.avatarUrl} />
+                    <AvatarFallback>{currentUser.name?.substring(0, 2).toUpperCase() || 'US'}</AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <Avatar className="w-full h-full">
+                    <AvatarFallback className="bg-main text-main-foreground font-bold">
+                      {currentUser?.name?.substring(0, 2).toUpperCase() || 'US'}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={() => router.push('/account?tab=profile')}><User /> <span>Profile</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/account?tab=settings')}><Settings /> <span>Account Settings</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/account?tab=team')}><Users /> <span>Team</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleThemeToggle}>
+                    {theme === 'dark' ? <Sun /> : <Moon />}
+                    <span>Toggle Theme</span>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setIsLogoutDrawerOpen(true)}>
+                  <LogOut />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -201,6 +228,25 @@ export function Header() {
         onSuccess={handlePinSuccess}
         actionName="Emergency Aggregator Pause"
       />
+
+      <Drawer open={isLogoutDrawerOpen} onOpenChange={setIsLogoutDrawerOpen}>
+        <DrawerContent>
+          <div className="mx-auto w-[400px]">
+            <DrawerHeader>
+              <DrawerTitle>Are you absolutely sure?</DrawerTitle>
+              <DrawerDescription>
+                You are about to sign out. All unsaved changes will be lost.
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter className="grid grid-cols-2">
+              <Button variant="destructive" onClick={handleLogout}>Sign Out</Button>
+              <DrawerClose render={<Button className="bg-secondary-background text-foreground" variant="noShadow" />}>
+                Cancel
+              </DrawerClose>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </header>
   );
 }

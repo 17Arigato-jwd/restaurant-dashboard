@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { TrendingUp, Clock, AlertTriangle, AlertCircle, CreditCard, Banknote, Smartphone, CheckCircle2, Utensils } from "lucide-react";
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
   PieChart, Pie, Cell
 } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from "@/components/ui/chart";
 
 // Mock Data
 const HOURLY_DATA = [
@@ -25,10 +26,10 @@ const HOURLY_DATA = [
 ];
 
 const CHANNEL_DATA = [
-  { name: "Dine-In", value: 172000, color: "#10b981" },
-  { name: "Swiggy", value: 85000, color: "#f97316" },
-  { name: "Zomato", value: 65000, color: "#ef4444" },
-  { name: "ONDC", value: 4000, color: "#3b82f6" },
+  { name: "Dine-In", value: 172000, color: "#10b981", key: "dineIn" },
+  { name: "Swiggy", value: 85000, color: "#f97316", key: "swiggy" },
+  { name: "Zomato", value: 65000, color: "#ef4444", key: "zomato" },
+  { name: "ONDC", value: 4000, color: "#3b82f6", key: "ondc" },
 ];
 
 const ACTIVE_ORDERS = [
@@ -48,6 +49,18 @@ const LOW_STOCK = [
 export default function DashboardPage() {
   const [showDelayedOnly, setShowDelayedOnly] = useState(false);
   const [timeFilter, setTimeFilter] = useState<"today" | "yesterday">("today");
+
+  const chartConfigHourly = {
+    dineIn: { label: "Dine-In", color: "hsl(var(--main))" },
+    delivery: { label: "Aggregators", color: "#3b82f6" },
+  } satisfies ChartConfig;
+
+  const chartConfigChannel = {
+    dineIn: { label: "Dine-In", color: "#10b981" },
+    swiggy: { label: "Swiggy", color: "#f97316" },
+    zomato: { label: "Zomato", color: "#ef4444" },
+    ondc: { label: "ONDC", color: "#3b82f6" },
+  } satisfies ChartConfig;
 
   const filteredOrders = showDelayedOnly 
     ? ACTIVE_ORDERS.filter(o => o.status === "amber" || o.status === "red")
@@ -163,23 +176,17 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] w-full mt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={HOURLY_DATA} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                  <XAxis dataKey="time" stroke="currentColor" className="opacity-50 text-xs" tickLine={false} axisLine={false} />
-                  <YAxis stroke="currentColor" className="opacity-50 text-xs" tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val/1000}k`} />
-                  <RechartsTooltip 
-                    contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                    itemStyle={{ color: 'hsl(var(--foreground))' }}
-                    formatter={(value: any) => [`₹${value.toLocaleString()}`, undefined]}
-                  />
-                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  <Bar dataKey="dineIn" name="Dine-In" stackId="a" fill="#10b981" radius={[0, 0, 4, 4]} />
-                  <Bar dataKey="delivery" name="Aggregators (Online)" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            <ChartContainer config={chartConfigHourly} className="h-[300px] w-full mt-4">
+                <BarChart accessibilityLayer data={HOURLY_DATA} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="time" tickLine={false} axisLine={false} />
+                  <YAxis tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val/1000}k`} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartLegend content={<ChartLegendContent />} />
+                  <Bar dataKey="dineIn" name="Dine-In" stackId="a" fill="var(--color-dineIn)" radius={[0, 0, 4, 4]} />
+                  <Bar dataKey="delivery" name="Aggregators" stackId="a" fill="var(--color-delivery)" radius={[4, 4, 0, 0]} />
                 </BarChart>
-              </ResponsiveContainer>
-            </div>
+            </ChartContainer>
           </CardContent>
         </Card>
 
@@ -189,8 +196,7 @@ export default function DashboardPage() {
             <CardDescription>Dine-in vs Delivery platforms</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[220px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <ChartContainer config={chartConfigChannel} className="h-[220px] w-full">
                 <PieChart>
                   <Pie
                     data={CHANNEL_DATA}
@@ -202,20 +208,13 @@ export default function DashboardPage() {
                     dataKey="value"
                   >
                     {CHANNEL_DATA.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell key={`cell-${index}`} fill={`var(--color-${entry.key})`} />
                     ))}
                   </Pie>
-                  <RechartsTooltip 
-                    formatter={(value: any, name: any) => [
-                      `₹${value.toLocaleString()}`, 
-                      name === 'Swiggy' || name === 'Zomato' ? `${name} (High Commission 22%)` : name
-                    ]}
-                    contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                  />
-                  <Legend />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartLegend content={<ChartLegendContent />} />
                 </PieChart>
-              </ResponsiveContainer>
-            </div>
+            </ChartContainer>
             
             <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-dashed flex items-center justify-between">
               <div>

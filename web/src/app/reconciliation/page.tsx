@@ -3,11 +3,15 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileSpreadsheet, Download, AlertCircle, Banknote, Percent, FileWarning, Calculator } from "lucide-react";
+import { DatePickerWithRange } from "@/components/DatePicker";
+import { DateRange } from "react-day-picker";
+import { addDays } from "date-fns";
 
 // Mock Data for Audit Table
 const AUDIT_DATA = [
@@ -21,6 +25,7 @@ const AUDIT_DATA = [
 export default function ReconciliationPage() {
   const [orderValue, setOrderValue] = useState<number>(1000);
   const [commissionPercent, setCommissionPercent] = useState<number>(22);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: new Date(), to: addDays(new Date(), 7) });
 
   // Financial Math Engine
   const calcDeductions = (gross: number, commPct: number) => {
@@ -139,26 +144,29 @@ export default function ReconciliationPage() {
 
         {/* Audit Table */}
         <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div>
               <CardTitle>Payout Discrepancy Audit</CardTitle>
               <CardDescription>Reconciliation engine flagging unauthorized aggregator deductions.</CardDescription>
             </div>
-            {discrepancies.length > 0 && (
-              <Button onClick={exportDisputeCSV} variant="destructive" className="bg-red-600 hover:bg-red-700">
-                <Download className="w-4 h-4 mr-2" /> Export Dispute Claim CSV
-              </Button>
-            )}
+            <div className="flex flex-col gap-2">
+              <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-[300px]" />
+              {discrepancies.length > 0 && (
+                <Button onClick={exportDisputeCSV} variant="destructive" className="bg-red-600 hover:bg-red-700 w-full">
+                  <Download className="w-4 h-4 mr-2" /> Export Dispute Claim CSV
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {discrepancies.length > 0 && (
-              <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg flex items-start gap-3">
-                <FileWarning className="w-5 h-5 text-red-600 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-red-800 dark:text-red-400 text-sm">Action Required</h4>
-                  <p className="text-sm text-red-700 dark:text-red-300">Found {discrepancies.length} orders with missing payouts totaling ₹{discrepancies.reduce((a,b)=>a+b.discrepancy,0).toFixed(2)}. Export CSV and file a merchant support ticket.</p>
-                </div>
-              </div>
+              <Alert variant="destructive" className="mb-4">
+                <FileWarning className="h-4 w-4" />
+                <AlertTitle>Action Required</AlertTitle>
+                <AlertDescription>
+                  Found {discrepancies.length} orders with missing payouts totaling ₹{discrepancies.reduce((a,b)=>a+b.discrepancy,0).toFixed(2)}. Export CSV and file a merchant support ticket.
+                </AlertDescription>
+              </Alert>
             )}
             
             <div className="overflow-x-auto">

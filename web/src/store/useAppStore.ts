@@ -24,7 +24,10 @@ interface AppState {
   // User Session
   token: string | null;
   role: string | null;
-  setSession: (token: string, role: string) => void;
+  currentUser: any | null;
+  setCurrentUser: (user: any | null) => void;
+  refreshCurrentUser: () => Promise<void>;
+  setSession: (token: string, role: string, userId: string) => void;
   logout: () => void;
 
   isManagerAuthorized: boolean;
@@ -77,8 +80,27 @@ export const useAppStore = create<AppState>()(
       // Auth
       token: null,
       role: null,
-      setSession: (token, role) => set({ token, role }),
-      logout: () => set({ token: null, role: null, isManagerAuthorized: false }),
+      currentUser: null,
+      setCurrentUser: (user) => set({ currentUser: user }),
+      refreshCurrentUser: async () => {
+        try {
+          const user = get().currentUser;
+          const userId = user?.id || 'u1';
+          const res = await fetch(`/api/team/${userId}`);
+          if (res.ok) {
+            const data = await res.json();
+            set({ currentUser: data, role: data.roleId });
+          }
+        } catch (e) { console.error(e); }
+      },
+      setSession: (token, role, userId) => {
+        set({ token, role });
+        // After setting session, we should fetch current user
+        // We'll mock the initial currentUser object before fetching full details
+        set({ currentUser: { id: userId, name: '', email: '', roleId: role, status: 'active' } });
+        get().refreshCurrentUser();
+      },
+      logout: () => set({ token: null, role: null, currentUser: null, isManagerAuthorized: false }),
 
       isManagerAuthorized: false,
       setManagerAuthorized: (status) => set({ isManagerAuthorized: status }),
@@ -142,7 +164,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'restaurant-storage',
-      partialize: (state) => ({ token: state.token, role: state.role }), // only persist auth so tables reset on reload for dev
+      partialize: (state) => ({ token: state.token, role: state.role, currentUser: state.currentUser }), // only persist auth so tables reset on reload for dev
     }
   )
 );

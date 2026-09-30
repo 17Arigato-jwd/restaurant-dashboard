@@ -2,11 +2,26 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogMedia } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { ImageUploader } from "@/components/ImageUploader";
+import { RolesManagement } from "@/components/RolesManagement";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Store, Receipt, Printer, Bell, ShieldAlert, Save, Trash2, PowerOff } from "lucide-react";
 
 export default function SettingsPage() {
@@ -22,43 +37,57 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         
         {/* Navigation Sidebar for Settings */}
-        <div className="space-y-1">
-          <Button 
-            variant={activeTab === "outlet" ? "secondary" : "ghost"} 
-            className="w-full justify-start"
-            onClick={() => setActiveTab("outlet")}
-          >
-            <Store className="w-4 h-4 mr-2" /> Outlet Details
-          </Button>
-          <Button 
-            variant={activeTab === "taxes" ? "secondary" : "ghost"} 
-            className="w-full justify-start"
-            onClick={() => setActiveTab("taxes")}
-          >
-            <Receipt className="w-4 h-4 mr-2" /> Taxes & Compliance
-          </Button>
-          <Button 
-            variant={activeTab === "hardware" ? "secondary" : "ghost"} 
-            className="w-full justify-start"
-            onClick={() => setActiveTab("hardware")}
-          >
-            <Printer className="w-4 h-4 mr-2" /> Hardware & Printers
-          </Button>
-          <Button 
-            variant={activeTab === "notifications" ? "secondary" : "ghost"} 
-            className="w-full justify-start"
-            onClick={() => setActiveTab("notifications")}
-          >
-            <Bell className="w-4 h-4 mr-2" /> Notifications
-          </Button>
-          <Button 
-            variant={activeTab === "danger" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === 'danger' ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400' : 'text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30'}`}
-            onClick={() => setActiveTab("danger")}
-          >
-            <ShieldAlert className="w-4 h-4 mr-2" /> Danger Zone
-          </Button>
-        </div>
+        <SidebarMenu className="space-y-1">
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              isActive={activeTab === "outlet"} 
+              onClick={() => setActiveTab("outlet")}
+            >
+              <Store /> <span>Outlet Details</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              isActive={activeTab === "taxes"} 
+              onClick={() => setActiveTab("taxes")}
+            >
+              <Receipt /> <span>Taxes & Compliance</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              isActive={activeTab === "hardware"} 
+              onClick={() => setActiveTab("hardware")}
+            >
+              <Printer /> <span>Hardware & Printers</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              isActive={activeTab === "notifications"} 
+              onClick={() => setActiveTab("notifications")}
+            >
+              <Bell /> <span>Notifications</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              isActive={activeTab === "roles"} 
+              onClick={() => setActiveTab("roles")}
+            >
+              <ShieldAlert className="w-4 h-4" /> <span>Roles & Permissions</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              isActive={activeTab === "danger"} 
+              onClick={() => setActiveTab("danger")}
+              className={activeTab === 'danger' ? 'bg-red-200 text-red-900 border-red-900 dark:bg-red-900 dark:text-red-100' : 'text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40'}
+            >
+              <ShieldAlert /> <span>Danger Zone</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
 
         {/* Settings Content Area */}
         <div className="md:col-span-3">
@@ -70,6 +99,14 @@ export default function SettingsPage() {
                 <CardDescription>Primary details displayed on bills and customer receipts.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="mb-6 w-full max-w-sm">
+                  <Label className="mb-2 block text-sm font-bold">Restaurant Logo</Label>
+                  <ImageUploader 
+                    defaultTitle="Upload restaurant logo"
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">This logo will be printed on bills and receipts.</p>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Restaurant Name</Label>
@@ -193,6 +230,17 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           )}
+          {activeTab === "roles" && (
+            <Card className="animate-in fade-in duration-300 slide-in-from-right-4">
+              <CardHeader>
+                <CardTitle>Roles & Permissions</CardTitle>
+                <CardDescription>Manage user roles and authorization levels.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RolesManagement />
+              </CardContent>
+            </Card>
+          )}
 
           {activeTab === "danger" && (
             <Card className="border-red-200 dark:border-red-900 animate-in fade-in duration-300 slide-in-from-right-4">
@@ -205,19 +253,70 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
-                <div className="flex items-center justify-between p-4 border border-red-100 dark:border-red-900/30 rounded-lg">
+                <Alert variant="destructive">
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>Warning</AlertTitle>
+                  <AlertDescription>
+                    Actions taken in this section are immediate and permanent. Please proceed with caution.
+                  </AlertDescription>
+                </Alert>
+                <div className="flex items-center justify-between p-4 border-2 border-border bg-secondary-background rounded-base">
                   <div>
                     <h4 className="font-bold text-sm">Factory Reset POS Data</h4>
                     <p className="text-xs text-muted-foreground mt-1">Erases all offline local storage, tables, and mock data.</p>
                   </div>
-                  <Button variant="destructive" size="sm"><Trash2 className="w-4 h-4 mr-2" /> Reset Local Data</Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger render={<Button variant="destructive" size="sm" />}>
+                      <Trash2 className="w-4 h-4 mr-2" /> Reset Local Data
+                    </AlertDialogTrigger>
+                    <AlertDialogContent size="sm">
+                      <AlertDialogHeader>
+                        <AlertDialogMedia className="bg-black text-white">
+                          <Trash2 className="w-6 h-6" />
+                        </AlertDialogMedia>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete your POS data. Please type <span className="font-bold text-foreground">factory-reset</span> to confirm.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <div className="px-4 py-4">
+                        <Input placeholder="factory-reset" />
+                      </div>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white">Reset Data</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
-                <div className="flex items-center justify-between p-4 border border-red-100 dark:border-red-900/30 rounded-lg">
+                <div className="flex items-center justify-between p-4 border-2 border-border bg-secondary-background rounded-base">
                   <div>
                     <h4 className="font-bold text-sm">Force Shut Down API Bridge</h4>
                     <p className="text-xs text-muted-foreground mt-1">Disconnects Aggregators & Tally immediately.</p>
                   </div>
-                  <Button variant="destructive" size="sm"><PowerOff className="w-4 h-4 mr-2" /> Disconnect APIs</Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger render={<Button variant="destructive" size="sm" />}>
+                      <PowerOff className="w-4 h-4 mr-2" /> Disconnect APIs
+                    </AlertDialogTrigger>
+                    <AlertDialogContent size="sm">
+                      <AlertDialogHeader>
+                        <AlertDialogMedia className="bg-black text-white">
+                          <PowerOff className="w-6 h-6" />
+                        </AlertDialogMedia>
+                        <AlertDialogTitle>Disconnect API Bridge?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will halt all orders from Zomato and Swiggy. Type <span className="font-bold text-foreground">disconnect</span> to confirm.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <div className="px-4 py-4">
+                        <Input placeholder="disconnect" />
+                      </div>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white">Disconnect</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardContent>
             </Card>
