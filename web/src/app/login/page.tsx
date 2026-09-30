@@ -35,7 +35,7 @@ export default function LoginPage() {
     const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
     
     try {
-      const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -48,7 +48,7 @@ export default function LoginPage() {
 
       if (isLogin) {
         const data = await res.json();
-        setSession(data.token, data.role);
+        setSession(data.token, data.role, data.userId);
         router.push("/dashboard");
       } else {
         // After register, automatically switch to login

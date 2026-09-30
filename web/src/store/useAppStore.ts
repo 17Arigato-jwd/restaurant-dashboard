@@ -27,7 +27,7 @@ interface AppState {
   currentUser: any | null;
   setCurrentUser: (user: any | null) => void;
   refreshCurrentUser: () => Promise<void>;
-  setSession: (token: string, role: string) => void;
+  setSession: (token: string, role: string, userId: string) => void;
   logout: () => void;
 
   isManagerAuthorized: boolean;
@@ -84,26 +84,23 @@ export const useAppStore = create<AppState>()(
       setCurrentUser: (user) => set({ currentUser: user }),
       refreshCurrentUser: async () => {
         try {
-          const res = await fetch("/api/team/u1");
+          const user = get().currentUser;
+          const userId = user?.id || 'u1';
+          const res = await fetch(`/api/team/${userId}`);
           if (res.ok) {
             const data = await res.json();
-            set({ currentUser: data });
+            set({ currentUser: data, role: data.roleId });
           }
         } catch (e) { console.error(e); }
       },
-      setSession: (token, role) => set({ token, role }),
-      logout: () => set({ token: null, role: null,
-      currentUser: null,
-      setCurrentUser: (user) => set({ currentUser: user }),
-      refreshCurrentUser: async () => {
-        try {
-          const res = await fetch("/api/team/u1");
-          if (res.ok) {
-            const data = await res.json();
-            set({ currentUser: data });
-          }
-        } catch (e) { console.error(e); }
-      }, isManagerAuthorized: false }),
+      setSession: (token, role, userId) => {
+        set({ token, role });
+        // After setting session, we should fetch current user
+        // We'll mock the initial currentUser object before fetching full details
+        set({ currentUser: { id: userId, name: '', email: '', roleId: role, status: 'active' } });
+        get().refreshCurrentUser();
+      },
+      logout: () => set({ token: null, role: null, currentUser: null, isManagerAuthorized: false }),
 
       isManagerAuthorized: false,
       setManagerAuthorized: (status) => set({ isManagerAuthorized: status }),

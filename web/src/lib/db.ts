@@ -24,9 +24,7 @@ let roles: Role[] = [
 ];
 
 let users: User[] = [
-  { id: 'u1', name: 'Restaurant Admin', email: 'admin@restaurant.com', roleId: 'r1', status: 'active', avatarUrl: '' },
-  { id: 'u2', name: 'Store Manager', email: 'manager@restaurant.com', roleId: 'r2', status: 'active', avatarUrl: '' },
-  { id: 'u3', name: 'Waiting for invite', email: 'accountant@restaurant.com', roleId: 'r3', status: 'pending', avatarUrl: '' },
+  { id: 'u1', name: 'Restaurant Admin', email: 'admin@restaurant.com', roleId: 'r1', status: 'active', avatarUrl: '' }
 ];
 
 export const db = {
@@ -36,6 +34,7 @@ export const db = {
   
   getUsers: () => [...users],
   getUser: (id: string) => users.find(u => u.id === id),
+  getUserByEmail: (email: string) => users.find(u => u.email === email),
   addUser: (user: User) => { users.push(user); return user; },
   updateUser: (id: string, updates: Partial<User>) => {
     users = users.map(u => u.id === id ? { ...u, ...updates } : u);

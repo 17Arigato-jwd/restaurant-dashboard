@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     name: body.name || 'New User',
     email: body.email,
     roleId: body.roleId,
-    status: 'pending',
+    status: 'active',
     avatarUrl: body.avatarUrl || ''
   });
   

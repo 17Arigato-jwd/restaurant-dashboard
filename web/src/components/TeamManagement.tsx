@@ -11,9 +11,12 @@ import { ImageUploader } from "@/components/ImageUploader";
 import { useAppStore } from "@/store/useAppStore";
 import { useRouter } from "next/navigation";
 
+import { AddMemberModal } from "./AddMemberModal";
+
 export function TeamManagement() {
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [roles, setRoles] = useState<any[]>([]);
   const { role: currentUserRole } = useAppStore(); // Assuming this is set on login
 
@@ -91,8 +94,9 @@ export function TeamManagement() {
 
   return (
     <div className="space-y-4">
+      <AddMemberModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAdded={fetchUsers} />
       <div className="flex justify-end mb-4">
-        <Button onClick={() => toast.add({ type: "success", title: "Invite Sent", description: "Invitation sent successfully." })}>
+        <Button onClick={() => setIsAddModalOpen(true)}>
           <UserPlus className="w-4 h-4 mr-2" /> Invite Member
         </Button>
       </div>
