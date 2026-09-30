@@ -114,7 +114,7 @@ export function Header() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="hidden lg:flex items-center space-x-4">
           <div className="flex items-center space-x-2 border-r pr-4">
             {isTallyConnected ? (
               <Badge variant="outline" className="text-green-600 border-green-600">
@@ -140,7 +140,7 @@ export function Header() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4 ml-auto">
           <GlobalSearch />
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm" onClick={() => setIsStockoutOpen(true)}>

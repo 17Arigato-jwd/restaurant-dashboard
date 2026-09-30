@@ -55,14 +55,14 @@ export function GlobalSearch() {
     <>
       <Button
         variant="neutral"
-        className="flex items-center gap-2 text-muted-foreground w-full sm:w-64 justify-between"
+        className="flex items-center gap-2 text-muted-foreground w-10 sm:w-64 justify-between"
         onClick={() => setOpen(true)}
       >
         <div className="flex items-center gap-2">
           <Search className="w-4 h-4" />
-          <span>Search...</span>
+          <span className="hidden sm:inline">Search...</span>
         </div>
-        <kbd className="bg-main text-main-foreground pointer-events-none inline-flex h-5 items-center gap-1 rounded-sm border-2 border-border px-1.5 font-mono text-[10px] font-heading select-none">
+        <kbd className="hidden sm:inline-flex bg-main text-main-foreground pointer-events-none inline-flex h-5 items-center gap-1 rounded-sm border-2 border-border px-1.5 font-mono text-[10px] font-heading select-none">
           <span className="text-xs">⌘</span>K
         </kbd>
       </Button>

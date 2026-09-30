@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/toast";
 import { ImageUploader } from "@/components/ImageUploader";
-import { Save } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 
 export function ProfileForm() {
@@ -61,16 +61,23 @@ export function ProfileForm() {
             ) : null}
             <AvatarFallback className="text-2xl font-heading bg-main text-main-foreground">{name.substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
-          <div className="w-full max-w-sm">
-            <Label className="mb-2 block text-sm font-bold">Profile Picture</Label>
-            <ImageUploader 
-              defaultTitle="Upload new avatar"
-              className="w-full"
-              onUpload={async (file) => {
-                const url = URL.createObjectURL(file);
-                setAvatarUrl(url);
-              }}
-            />
+          <div className="w-full max-w-sm flex items-end gap-2">
+            <div className="flex-1">
+              <Label className="mb-2 block text-sm font-bold">Profile Picture</Label>
+              <ImageUploader 
+                defaultTitle="Upload new avatar"
+                className="w-full"
+                onUpload={async (file) => {
+                  const url = URL.createObjectURL(file);
+                  setAvatarUrl(url);
+                }}
+              />
+            </div>
+            {avatarUrl && (
+              <Button variant="destructive" size="icon" onClick={() => setAvatarUrl("")} title="Remove Profile Picture">
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">

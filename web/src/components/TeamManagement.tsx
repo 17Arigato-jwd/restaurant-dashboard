@@ -9,8 +9,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "@/components/ui/toast";
 import { ImageUploader } from "@/components/ImageUploader";
 import { useAppStore } from "@/store/useAppStore";
+import { useRouter } from "next/navigation";
 
 export function TeamManagement() {
+  const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
   const { role: currentUserRole } = useAppStore(); // Assuming this is set on login
@@ -119,14 +121,17 @@ export function TeamManagement() {
           </div>
           
           <div className="flex items-center space-x-4">
-            <div className="w-32">
-              {/* Allow higher roles to edit avatars of others */}
+            <div className="flex items-center gap-2">
+              {/* Allow higher roles to edit others */}
               {user.roleId !== currentRoleId && (
-                <ImageUploader 
-                  defaultTitle="Edit Avatar" 
-                  className="w-full text-xs" 
-                  onUpload={async (file) => await handleUpdateAvatar(user.id, file)}
-                />
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => router.push(`/account/team/${user.id}`)}
+                >
+                  <FileEdit className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </Button>
               )}
             </div>
             
