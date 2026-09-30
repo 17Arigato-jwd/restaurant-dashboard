@@ -166,7 +166,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={handleThemetoggle}
+                onClick={handleThemeToggle}
                 className="ml-2 rounded-full border border-border"
                 aria-label="Toggle theme"
               >
