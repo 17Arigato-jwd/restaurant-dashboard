@@ -42,7 +42,15 @@ export default function LoginPage() {
       });
 
       if (!res.ok) {
-        const errText = await res.text();
+        let errText = await res.text();
+        if (errText.includes("<html")) {
+          errText = `Endpoint ${endpoint} not found or server error`;
+        } else {
+          try {
+            const errJson = JSON.parse(errText);
+            errText = errJson.error || errText;
+          } catch (e) {}
+        }
         throw new Error(errText || "Authentication failed");
       }
 
