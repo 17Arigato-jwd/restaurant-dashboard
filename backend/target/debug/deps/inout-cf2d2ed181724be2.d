@@ -1,9 +1,0 @@
-/mnt/windows/Users/Varchas/VCHS - Programming Folder/Overcaffinated/restaurant-dashboard/backend/target/debug/deps/inout-cf2d2ed181724be2.d: /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/lib.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/errors.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/inout.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/inout_buf.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/reserved.rs
-
-/mnt/windows/Users/Varchas/VCHS - Programming Folder/Overcaffinated/restaurant-dashboard/backend/target/debug/deps/libinout-cf2d2ed181724be2.rmeta: /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/lib.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/errors.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/inout.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/inout_buf.rs /home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/reserved.rs
-
-/home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/lib.rs:
-/home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/errors.rs:
-/home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/inout.rs:
-/home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/inout_buf.rs:
-/home/varchas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/inout-0.2.2/src/reserved.rs:
