@@ -9,6 +9,7 @@ import { Trash2, Plus } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogMedia } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/toast";
 import { useAppStore } from "@/store/useAppStore";
+import { authHeaders } from "@/lib/api";
 
 export function RolesManagement() {
   const [roles, setRoles] = useState<any[]>([]);
@@ -21,7 +22,7 @@ export function RolesManagement() {
   }, []);
 
   const fetchRoles = async () => {
-    const res = await fetch('/api/roles');
+    const res = await fetch('/api/roles', { headers: authHeaders() });
     if (res.ok) {
       setRoles(await res.json());
     }
@@ -32,10 +33,7 @@ export function RolesManagement() {
 
     const res = await fetch('/api/roles', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-User-Role-Id': currentRoleId
-      },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ name: newRoleName, level: 5 }) // Custom roles default to low privilege
     });
 
@@ -52,9 +50,7 @@ export function RolesManagement() {
   const handleDeleteRole = async (id: string) => {
     const res = await fetch(`/api/roles/${id}`, {
       method: 'DELETE',
-      headers: {
-        'X-User-Role-Id': currentRoleId
-      }
+      headers: authHeaders(),
     });
 
     if (res.ok) {

@@ -27,6 +27,8 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { useAppStore } from "@/store/useAppStore"
+import { maxLevelForPath, roleLevelOf } from "@/lib/permissions"
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -44,6 +46,15 @@ const items = [
 ]
 
 export function AppSidebar() {
+  const currentUser = useAppStore((state) => state.currentUser)
+  const level = roleLevelOf(currentUser)
+
+  const visibleItems = items.filter((item) => {
+    const maxLevel = maxLevelForPath(item.url)
+    if (maxLevel == null || level == null) return true
+    return level <= maxLevel
+  })
+
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
@@ -51,7 +62,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Operations</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton tooltip={item.title} render={<Link href={item.url} />}>
                     <item.icon />

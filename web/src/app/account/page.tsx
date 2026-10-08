@@ -15,6 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage, AvatarBadge } from "@/components/u
 import { ImageUploader } from "@/components/ImageUploader";
 import { TeamManagement } from "@/components/TeamManagement";
 import { ProfileForm } from "@/components/ProfileForm";
+import { useAppStore } from "@/store/useAppStore";
+import { roleLevelOf } from "@/lib/permissions";
 
 export default function AccountPage() {
   return (
@@ -28,6 +30,9 @@ function AccountContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const activeTab = searchParams.get("tab") || "profile";
+  const currentUser = useAppStore((state) => state.currentUser);
+  const level = roleLevelOf(currentUser);
+  const canManageTeam = level == null || level <= 2;
 
   const setActiveTab = (tab: string) => {
     router.replace(`/account?tab=${tab}`);
@@ -60,14 +65,16 @@ function AccountContent() {
               <Settings /> <span>Account Settings</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              isActive={activeTab === "team"} 
-              onClick={() => setActiveTab("team")}
-            >
-              <Users /> <span>Team Management</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {canManageTeam && (
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                isActive={activeTab === "team"} 
+                onClick={() => setActiveTab("team")}
+              >
+                <Users /> <span>Team Management</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
 
         {/* Content Area */}
@@ -128,7 +135,7 @@ function AccountContent() {
             </Card>
           )}
 
-          {activeTab === "team" && (
+          {activeTab === "team" && canManageTeam && (
             <Card className="animate-in fade-in duration-300 slide-in-from-right-4 bg-secondary-background">
               <CardHeader>
                 <CardTitle>Team Management</CardTitle>

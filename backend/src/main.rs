@@ -1135,8 +1135,9 @@ async fn change_user_password(
         }
     };
 
-    // Changing your own password requires the current one.
-    if claims.sub == id {
+    // Changing your own password normally requires the current one, except when
+    // the account is still using an auto-generated temporary password.
+    if claims.sub == id && user.must_change_password == 0 {
         let current = payload.current_password.clone().unwrap_or_default();
         if !verify(&current, &user.password_hash).unwrap_or(false) {
             return (

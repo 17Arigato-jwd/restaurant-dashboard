@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "@/components/ui/toast";
 import { ImageUploader } from "@/components/ImageUploader";
 import { Save, Trash2 } from "lucide-react";
-import { useAppStore } from "@/store/useAppStore";
+import { useAppStore } from "@/store/useAppStore";import { authHeaders } from "@/lib/api";
+import { ChangePasswordCard } from "@/components/ChangePasswordCard";
 
 export function ProfileForm() {
   const { currentUser, refreshCurrentUser } = useAppStore();
@@ -27,10 +28,11 @@ export function ProfileForm() {
   }, [currentUser]);
 
   const handleSave = async () => {
+    if (!currentUser?.id) return;
     try {
-      const res = await fetch(`/api/team/u1`, {
+      const res = await fetch(`/api/team/${currentUser.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ name, email, avatarUrl })
       });
       if (res.ok) {
@@ -48,6 +50,7 @@ export function ProfileForm() {
   const lastName = lastNameParts.join(" ");
 
   return (
+    <div className="space-y-6">
     <Card className="animate-in fade-in duration-300 slide-in-from-right-4 bg-secondary-background">
       <CardHeader>
         <CardTitle>Profile Details</CardTitle>
@@ -103,5 +106,7 @@ export function ProfileForm() {
         <Button onClick={handleSave}><Save className="w-4 h-4 mr-2" /> Save Profile</Button>
       </CardFooter>
     </Card>
+    {currentUser?.id && <ChangePasswordCard userId={currentUser.id} mode="self" />}
+    </div>
   );
 }

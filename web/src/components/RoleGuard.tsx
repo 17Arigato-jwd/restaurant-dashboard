@@ -4,29 +4,48 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { toast } from "@/components/ui/toast";
+import { roleLevelOf } from "@/lib/permissions";
 
 interface RoleGuardProps {
   children: React.ReactNode;
-  allowedRoles: string[]; // e.g. ['r1', 'r2']
+  /** Explicitly allowed role ids (e.g. ['r1', 'r2']). */
+  allowedRoles?: string[];
+  /** Maximum (least privileged) role level allowed, e.g. 2 for Owner/Manager. */
+  maxLevel?: number;
   fallbackRoute?: string;
 }
 
-export function RoleGuard({ children, allowedRoles, fallbackRoute = "/dashboard" }: RoleGuardProps) {
+/**
+ * Client-side content guard. The shell already blocks whole routes by role, but
+ * this additionally protects individual panels/tabs and shows a toast.
+ */
+export function RoleGuard({
+  children,
+  allowedRoles,
+  maxLevel,
+  fallbackRoute = "/dashboard",
+}: RoleGuardProps) {
   const router = useRouter();
   const { role, currentUser } = useAppStore();
+  const level = roleLevelOf(currentUser);
+
+  const allowedByRole = !allowedRoles || (role != null && allowedRoles.includes(role));
+  const allowedByLevel = maxLevel == null || level == null || level <= maxLevel;
+  const allowed = allowedByRole && allowedByLevel;
 
   useEffect(() => {
-    // Only run the check if we have finished hydrating (indicated by a non-null role or currentUser, though initial state might be null until fetch)
-    // Wait, since Zustand state persists, `role` should be available immediately on mount.
-    if (role && !allowedRoles.includes(role)) {
-      toast.add({ type: "error", title: "Access Denied", description: "You do not have permission to view this page." });
-      router.push(fallbackRoute);
+    if (!allowed) {
+      toast.add({
+        type: "error",
+        title: "Access Denied",
+        description: "You do not have permission to view this content.",
+      });
+      router.replace(fallbackRoute);
     }
-  }, [role, allowedRoles, router, fallbackRoute]);
+  }, [allowed, router, fallbackRoute]);
 
-  // If role is missing or not allowed, render null to prevent flash of restricted content
-  if (!role || !allowedRoles.includes(role)) {
-    return null; 
+  if (!allowed) {
+    return null;
   }
 
   return <>{children}</>;

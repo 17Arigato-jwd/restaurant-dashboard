@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/Header";
-import { AppSidebar } from "@/components/AppSidebar";
+import { AuthShell } from "@/components/AuthShell";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toast";
 
@@ -40,15 +38,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider>
-            <SidebarProvider>
-              <AppSidebar />
-              <SidebarInset className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-1 bg-muted/10">
-                  {children}
-                </main>
-              </SidebarInset>
-            </SidebarProvider>
+            <AuthShell>{children}</AuthShell>
           </TooltipProvider>
           <Toaster />
         </ThemeProvider>

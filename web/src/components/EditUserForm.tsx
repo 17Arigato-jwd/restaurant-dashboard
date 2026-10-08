@@ -10,7 +10,8 @@ import { toast } from "@/components/ui/toast";
 import { ImageUploader } from "@/components/ImageUploader";
 import { Save, Trash2, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAppStore } from "@/store/useAppStore";
+import { useAppStore } from "@/store/useAppStore";import { authHeaders } from "@/lib/api";
+import { ChangePasswordCard } from "@/components/ChangePasswordCard";
 
 export function EditUserForm({ userId }: { userId: string }) {
   const router = useRouter();
@@ -24,7 +25,7 @@ export function EditUserForm({ userId }: { userId: string }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch(`/api/team/${userId}`);
+        const res = await fetch(`/api/team/${userId}`, { headers: authHeaders() });
         if (res.ok) {
           const data = await res.json();
           setName(data.name || "");
@@ -46,7 +47,7 @@ export function EditUserForm({ userId }: { userId: string }) {
     try {
       const res = await fetch(`/api/team/${userId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ name, email, avatarUrl })
       });
       if (res.ok) {
@@ -130,6 +131,7 @@ export function EditUserForm({ userId }: { userId: string }) {
           <Button onClick={handleSave}><Save className="w-4 h-4 mr-2" /> Save Changes</Button>
         </CardFooter>
       </Card>
+      <ChangePasswordCard userId={userId} mode="manage" />
     </div>
   );
 }

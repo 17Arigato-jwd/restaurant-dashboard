@@ -1,6 +1,26 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export interface SessionRole {
+  id: string;
+  name: string;
+  level: number;
+  canEditLevelsAbove: number;
+}
+
+export interface SessionUser {
+  id: string;
+  name: string;
+  email: string;
+  roleId: string;
+  avatarUrl?: string;
+  status?: string;
+  role?: SessionRole;
+  teamId?: string | null;
+  restaurantId?: string;
+  mustChangePassword?: boolean;
+}
+
 export type TableState = 'available' | 'seated' | 'ordered' | 'billed';
 
 export interface OrderItem {
@@ -24,10 +44,12 @@ interface AppState {
   // User Session
   token: string | null;
   role: string | null;
-  currentUser: any | null;
-  setCurrentUser: (user: any | null) => void;
+  currentUser: SessionUser | null;
+  mustChangePassword: boolean;
+  setCurrentUser: (user: SessionUser | null) => void;
+  setMustChangePassword: (value: boolean) => void;
   refreshCurrentUser: () => Promise<void>;
-  setSession: (token: string, role: string, userId: string) => void;
+  setSession: (token: string, role: string, userId: string, user?: SessionUser) => void;
   logout: () => void;
 
   isManagerAuthorized: boolean;
@@ -81,26 +103,30 @@ export const useAppStore = create<AppState>()(
       token: null,
       role: null,
       currentUser: null,
+      mustChangePassword: false,
       setCurrentUser: (user) => set({ currentUser: user }),
+      setMustChangePassword: (value) => set({ mustChangePassword: value }),
       refreshCurrentUser: async () => {
+        const { currentUser, token } = get();
+        const userId = currentUser?.id;
+        if (!userId || !token) return;
         try {
-          const user = get().currentUser;
-          const userId = user?.id || 'u1';
-          const res = await fetch(`/api/team/${userId}`);
+          const res = await fetch(`/api/team/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
           if (res.ok) {
             const data = await res.json();
             set({ currentUser: data, role: data.roleId });
           }
         } catch (e) { console.error(e); }
       },
-      setSession: (token, role, userId) => {
+      setSession: (token, role, userId, user) => {
         set({ token, role });
-        // After setting session, we should fetch current user
-        // We'll mock the initial currentUser object before fetching full details
-        set({ currentUser: { id: userId, name: '', email: '', roleId: role, status: 'active' } });
-        get().refreshCurrentUser();
+        const resolved = user ?? { id: userId, name: '', email: '', roleId: role, status: 'active' };
+        set({ currentUser: resolved, mustChangePassword: Boolean(resolved?.mustChangePassword) });
+        if (!user) get().refreshCurrentUser();
       },
-      logout: () => set({ token: null, role: null, currentUser: null, isManagerAuthorized: false }),
+      logout: () => set({ token: null, role: null, currentUser: null, isManagerAuthorized: false, mustChangePassword: false }),
 
       isManagerAuthorized: false,
       setManagerAuthorized: (status) => set({ isManagerAuthorized: status }),
@@ -164,7 +190,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'restaurant-storage',
-      partialize: (state) => ({ token: state.token, role: state.role, currentUser: state.currentUser }), // only persist auth so tables reset on reload for dev
+      partialize: (state) => ({ token: state.token, role: state.role, currentUser: state.currentUser, mustChangePassword: state.mustChangePassword }), // only persist auth so tables reset on reload for dev
     }
   )
 );
