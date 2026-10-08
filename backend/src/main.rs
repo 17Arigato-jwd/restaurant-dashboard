@@ -19,11 +19,41 @@ struct AppState {
 }
 
 #[derive(Serialize, FromRow)]
+struct Restaurant {
+    id: String,
+    name: String,
+    created_at: String,
+}
+
+#[derive(Serialize, FromRow)]
+struct Team {
+    id: String,
+    restaurant_id: String,
+    name: String,
+    description: Option<String>,
+    owner_id: String,
+    created_at: String,
+}
+
+#[derive(Serialize, FromRow)]
+struct Role {
+    id: String,
+    name: String,
+    level: i32,
+    can_edit_levels_above: i32,
+}
+
+#[derive(Serialize, FromRow)]
 struct User {
     id: String,
     email: String,
     password_hash: String,
-    role: String,
+    name: String,
+    role_id: String,
+    team_id: Option<String>,
+    restaurant_id: String,
+    avatar_url: Option<String>,
+    status: String,
     created_at: String,
 }
 
@@ -43,12 +73,16 @@ struct LoginRequest {
 struct AuthResponse {
     token: String,
     role: String,
+    team_id: Option<String>,
+    restaurant_id: String,
 }
 
 #[derive(Serialize, Deserialize)]
 struct Claims {
     sub: String,
     role: String,
+    team_id: Option<String>,
+    restaurant_id: String,
     exp: usize,
 }
 
@@ -61,18 +95,54 @@ async fn main() {
         .await
         .expect("Failed to connect to SQLite");
 
-    sqlx::query(
+    // ---- Multi-tenancy schema -------------------------------------------------
+    let queries = vec![
+        "PRAGMA foreign_keys = ON;",
+        "CREATE TABLE IF NOT EXISTS restaurants (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );",
+        "CREATE TABLE IF NOT EXISTS teams (
+            id TEXT PRIMARY KEY,
+            restaurant_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT,
+            owner_id TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(restaurant_id) REFERENCES restaurants(id)
+        );",
+        "CREATE TABLE IF NOT EXISTS roles (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            level INTEGER NOT NULL,
+            can_edit_levels_above INTEGER NOT NULL
+        );",
+        "DROP TABLE IF EXISTS users;",
         "CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
-            role TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )"
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
+            name TEXT NOT NULL,
+            role_id TEXT NOT NULL,
+            team_id TEXT,
+            restaurant_id TEXT NOT NULL,
+            avatar_url TEXT,
+            status TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(role_id) REFERENCES roles(id),
+            FOREIGN KEY(team_id) REFERENCES teams(id),
+            FOREIGN KEY(restaurant_id) REFERENCES restaurants(id)
+        );",
+        "INSERT OR IGNORE INTO roles (id, name, level, can_edit_levels_above)
+         VALUES ('r1', 'Owner', 1, 1),
+                ('r2', 'Store Manager', 2, 2),
+                ('r3', 'Cashier', 3, 999),
+                ('r4', 'Janitor', 4, 999);",
+    ];
+    for q in queries {
+        sqlx::query(q).execute(&pool).await.unwrap();
+    }
 
     let state = AppState { db: pool };
 
@@ -89,7 +159,7 @@ async fn main() {
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
     println!("Rust backend listening on {}", addr);
-    
+
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
@@ -111,16 +181,22 @@ struct WhatsAppResponse {
 async fn send_whatsapp_bill(
     Json(payload): Json<WhatsAppBillRequest>,
 ) -> impl IntoResponse {
-    println!("Simulating WhatsApp bill send to {} for table {}", payload.phone, payload.tableId);
-    
-    // In a real scenario, we would make a reqwest HTTP POST to Meta's Graph API here:
-    // https://graph.facebook.com/v19.0/.../messages
-    // with the template name 'digital_bill_receipt' as specified in the PDF blueprint.
-    
-    // For now, return a mocked success response
+    println!(
+        "Simulating WhatsApp bill send to {} for table {}",
+        payload.phone, payload.tableId
+    );
+
     let response = WhatsAppResponse {
         ok: true,
-        messageId: format!("wamid.mock.{}", Uuid::new_v4().to_string().replace("-", "").chars().take(10).collect::<String>()),
+        messageId: format!(
+            "wamid.mock.{}",
+            Uuid::new_v4()
+                .to_string()
+                .replace("-", "")
+                .chars()
+                .take(10)
+                .collect::<String>()
+        ),
     };
 
     (StatusCode::OK, Json(response)).into_response()
@@ -134,15 +210,46 @@ async fn register(
     let id = Uuid::new_v4().to_string();
     let now = Utc::now().to_rfc3339();
 
-    let role = "owner";
+    let restaurant_id = format!("res_{}", Uuid::new_v4().simple());
+    let team_id = format!("team_{}", Uuid::new_v4().simple());
+
+    // Create a restaurant entity for this account
+    let _ = sqlx::query(
+        "INSERT INTO restaurants (id, name, created_at) VALUES (?, ?, ?)"
+    )
+    .bind(&restaurant_id)
+    .bind("My Restaurant")
+    .bind(&now)
+    .execute(&state.db)
+    .await;
+
+    // Create the team that owns this restaurant
+    let _ = sqlx::query(
+        "INSERT INTO teams (id, restaurant_id, name, description, owner_id, created_at)
+         VALUES (?, ?, ?, ?, ?, ?)"
+    )
+    .bind(&team_id)
+    .bind(&restaurant_id)
+    .bind("Main Branch")
+    .bind("Primary location")
+    .bind(&id)
+    .bind(&now)
+    .execute(&state.db)
+    .await;
 
     let result = sqlx::query(
-        "INSERT INTO users (id, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?)"
+        "INSERT INTO users (id, email, password_hash, name, role_id, team_id, restaurant_id, avatar_url, status, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(&id)
     .bind(&payload.email)
     .bind(&hashed)
-    .bind(role)
+    .bind(payload.email.split('@').next().unwrap_or("Owner"))
+    .bind("r1")
+    .bind(&team_id)
+    .bind(&restaurant_id)
+    .bind("")
+    .bind("active")
     .bind(&now)
     .execute(&state.db)
     .await;
@@ -157,11 +264,13 @@ async fn login(
     State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
 ) -> impl IntoResponse {
-    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE email = ?")
-        .bind(&payload.email)
-        .fetch_optional(&state.db)
-        .await
-        .unwrap();
+    let user = sqlx::query_as::<_, User>(
+        "SELECT * FROM users WHERE email = ?"
+    )
+    .bind(&payload.email)
+    .fetch_optional(&state.db)
+    .await
+    .unwrap();
 
     if let Some(user) = user {
         if verify(&payload.password, &user.password_hash).unwrap_or(false) {
@@ -172,7 +281,9 @@ async fn login(
 
             let claims = Claims {
                 sub: user.id,
-                role: user.role.clone(),
+                role: user.role_id.clone(),
+                team_id: user.team_id.clone(),
+                restaurant_id: user.restaurant_id.clone(),
                 exp: expiration,
             };
 
@@ -182,7 +293,16 @@ async fn login(
                 &EncodingKey::from_secret(JWT_SECRET.as_ref()),
             ).unwrap();
 
-            return (StatusCode::OK, Json(AuthResponse { token, role: user.role })).into_response();
+            return (
+                StatusCode::OK,
+                Json(AuthResponse {
+                    token,
+                    role: user.role_id,
+                    team_id: user.team_id,
+                    restaurant_id: user.restaurant_id,
+                }),
+            )
+                .into_response();
         }
     }
 
@@ -205,17 +325,16 @@ struct DeliveryData {
 
 async fn get_delivery_tracking() -> impl IntoResponse {
     let restaurant_loc = [12.9345, 77.6265];
-    
-    // We will define 5 routes. 1 old, 4 new (far and near).
+
     let routes = vec![
         // 1. Original (Near, South East)
         vec![
-            [12.9360, 77.6230], // Start
+            [12.9360, 77.6230],
             restaurant_loc,
             [12.9330, 77.6266],
             [12.9312, 77.6268],
             [12.9290, 77.6270],
-            [12.9279, 77.6271], // Customer
+            [12.9279, 77.6271],
         ],
         // 2. Near, North West (Indiranagar direction)
         vec![
@@ -248,18 +367,20 @@ async fn get_delivery_tracking() -> impl IntoResponse {
             restaurant_loc,
             [12.9350, 77.6285],
             [12.9365, 77.6295],
-        ]
+        ],
     ];
 
-    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
-    
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+
     let mut deliveries = Vec::new();
-    
+
     for (i, route) in routes.iter().enumerate() {
-        // Offset the cycle duration and progress slightly for each driver so they aren't synchronized
-        let cycle_duration = 20 + (i as u64 * 5); 
+        let cycle_duration = 20 + (i as u64 * 5);
         let progress = ((now + (i as u64 * 13)) % cycle_duration) as f64 / cycle_duration as f64;
-        
+
         let total_segments = (route.len() - 1) as f64;
         let current_segment_f = progress * total_segments;
         let current_segment = current_segment_f.floor() as usize;
@@ -267,10 +388,10 @@ async fn get_delivery_tracking() -> impl IntoResponse {
 
         let p1 = route[current_segment];
         let p2 = route[current_segment + 1];
-        
+
         let current_lat = p1[0] + (p2[0] - p1[0]) * segment_progress;
         let current_lng = p1[1] + (p2[1] - p1[1]) * segment_progress;
-        
+
         deliveries.push(DeliveryData {
             id: format!("driver-{}", i),
             customer: *route.last().unwrap(),
@@ -283,6 +404,6 @@ async fn get_delivery_tracking() -> impl IntoResponse {
         restaurant: restaurant_loc,
         deliveries,
     };
-    
+
     (StatusCode::OK, Json(response)).into_response()
 }
