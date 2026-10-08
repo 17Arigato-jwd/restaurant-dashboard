@@ -1,22 +1,8 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { forward } from '@/lib/backend';
 
-// GET /api/teams/:id/members — list members of a specific team
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const team = db.getTeam(id);
+type Ctx = { params: Promise<{ id: string }> };
 
-  if (!team) {
-    return NextResponse.json({ error: 'Team not found' }, { status: 404 });
-  }
-
-  const members = db.getTeamMembers(id);
-  const roles = db.getRoles();
-
-  const populated = members.map(m => ({
-    ...m,
-    role: roles.find(r => r.id === m.roleId),
-  }));
-
-  return NextResponse.json(populated);
+export async function GET(req: Request, ctx: Ctx) {
+  const { id } = await ctx.params;
+  return forward(req, `/api/teams/${id}/members`);
 }
