@@ -38,6 +38,45 @@ export default function InventoryExpiryPage() {
   const categories = ["Produce", "Meat", "Dairy", "Pantry", "Beverage", "General"];
   const units = ["kg", "g", "L", "ml", "pcs", "boxes"];
 
+  // A few realistic starting items so a brand-new outlet can see the tracker and
+  // the Stock & Waste page working without typing each one by hand.
+  const SAMPLE_STOCK = [
+    { name: "Tomatoes", category: "Produce", quantity: 12, unit: "kg", days: 4 },
+    { name: "Fresh Paneer", category: "Dairy", quantity: 6, unit: "kg", days: 6 },
+    { name: "Amul Butter", category: "Dairy", quantity: 4, unit: "kg", days: 20 },
+    { name: "Fresh Cream", category: "Dairy", quantity: 5, unit: "L", days: 9 },
+    { name: "Chicken Tikka", category: "Meat", quantity: 8, unit: "kg", days: 2 },
+    { name: "Basmati Rice", category: "Pantry", quantity: 25, unit: "kg", days: 60 },
+  ];
+
+  const handleLoadSamples = async () => {
+    const results = await Promise.all(
+      SAMPLE_STOCK.map((item) => {
+        const expiry = new Date(Date.now() + item.days * 86_400_000).toISOString().slice(0, 10);
+        return fetch('/api/inventory-items', {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            name: item.name,
+            category: item.category,
+            quantity: item.quantity,
+            unit: item.unit,
+            expiryDate: expiry,
+          }),
+        });
+      }),
+    );
+    const added = results.filter((r) => r.ok).length;
+    if (added === SAMPLE_STOCK.length) {
+      toast.add({ type: "success", title: "Sample stock added", description: `${added} items added to inventory.` });
+    } else if (added > 0) {
+      toast.add({ type: "error", title: "Partially added", description: `${added} of ${SAMPLE_STOCK.length} items added.` });
+    } else {
+      toast.add({ type: "error", title: "Error", description: "Could not add sample stock. Is the backend running?" });
+    }
+    fetchItems();
+  };
+
   const fetchItems = async () => {
     try {
       setError(null);
@@ -198,7 +237,18 @@ export default function InventoryExpiryPage() {
               ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-muted-foreground italic">
-                    {error ? "Inventory could not be loaded." : "No inventory items found. Add some stock to track expiry."}
+                    {error ? (
+                      "Inventory could not be loaded."
+                    ) : (
+                      <div className="flex flex-col items-center gap-3 not-italic">
+                        <span>No inventory items found. Add some stock to track expiry.</span>
+                        {isManager && (
+                          <Button variant="outline" size="sm" onClick={handleLoadSamples}>
+                            <Plus className="w-4 h-4 mr-2" /> Load sample stock
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : items.map((item, index) => {

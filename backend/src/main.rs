@@ -462,6 +462,25 @@ async fn main() {
     .execute(&pool)
     .await;
 
+    // Backfill the starter floor plan for outlets created before seeding existed,
+    // so pre-existing accounts are not stuck with an empty Tables/KDS screen.
+    let outlets_without_tables: Vec<String> = sqlx::query_scalar(
+        "SELECT id FROM restaurants
+         WHERE id NOT IN (SELECT DISTINCT restaurant_id FROM tables)",
+    )
+    .fetch_all(&pool)
+    .await
+    .unwrap_or_default();
+    for restaurant_id in &outlets_without_tables {
+        seed_floor_plan(&pool, restaurant_id).await;
+    }
+    if !outlets_without_tables.is_empty() {
+        println!(
+            "Seeded the starter floor plan for {} existing outlet(s).",
+            outlets_without_tables.len()
+        );
+    }
+
     let state = AppState { db: pool };
     let cors = CorsLayer::permissive();
 
@@ -517,12 +536,50 @@ async fn main() {
         .layer(cors);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
-    println!("Rust backend listening on {addr}");
 
-    let listener = tokio::net::TcpListener::bind(addr)
-        .await
-        .expect("Failed to bind address");
+    let listener = match tokio::net::TcpListener::bind(addr).await {
+        Ok(listener) => listener,
+        Err(error) => {
+            eprintln!("Could not start: cannot bind {addr} ({error}).");
+            eprintln!("Port 8000 is already in use - most likely another backend is still running.");
+            eprintln!("Stop it, then try again:");
+            eprintln!("  PowerShell:  Get-Process backend | Stop-Process -Force");
+            eprintln!("  find owner:  Get-NetTCPConnection -LocalPort 8000 -State Listen");
+            std::process::exit(1);
+        }
+    };
+
+    println!("Rust backend listening on {addr}");
     axum::serve(listener, app).await.unwrap();
+}
+
+/// Inserts the standard 8-table starter floor plan for an outlet. Idempotent:
+/// table ids are derived from the restaurant id and `INSERT OR IGNORE` is used,
+/// so running it again never duplicates or overwrites existing tables.
+async fn seed_floor_plan(pool: &SqlitePool, restaurant_id: &str) {
+    let floor_plan: [(&str, i64); 8] = [
+        ("T-01", 2),
+        ("T-02", 2),
+        ("T-03", 4),
+        ("T-04", 4),
+        ("T-05", 6),
+        ("T-06", 6),
+        ("T-07", 8),
+        ("T-08", 2),
+    ];
+    for (index, (table_name, capacity)) in floor_plan.iter().enumerate() {
+        let table_id = format!("{restaurant_id}_t{}", index + 1);
+        let _ = sqlx::query(
+            "INSERT OR IGNORE INTO tables (id, restaurant_id, name, capacity, state, waiter, seated_at)
+             VALUES (?, ?, ?, ?, 'available', NULL, NULL)",
+        )
+        .bind(&table_id)
+        .bind(restaurant_id)
+        .bind(table_name)
+        .bind(capacity)
+        .execute(pool)
+        .await;
+    }
 }
 
 async fn health() -> &'static str {
@@ -597,29 +654,7 @@ async fn register(
 
     // Give every new outlet a starter floor plan so the Tables & KDS screens are
     // immediately usable instead of starting completely empty.
-    let floor_plan: [(&str, i64); 8] = [
-        ("T-01", 2),
-        ("T-02", 2),
-        ("T-03", 4),
-        ("T-04", 4),
-        ("T-05", 6),
-        ("T-06", 6),
-        ("T-07", 8),
-        ("T-08", 2),
-    ];
-    for (index, (table_name, capacity)) in floor_plan.iter().enumerate() {
-        let table_id = format!("{}_t{}", restaurant_id, index + 1);
-        let _ = sqlx::query(
-            "INSERT OR IGNORE INTO tables (id, restaurant_id, name, capacity, state, waiter, seated_at)
-             VALUES (?, ?, ?, ?, 'available', NULL, NULL)",
-        )
-        .bind(&table_id)
-        .bind(&restaurant_id)
-        .bind(table_name)
-        .bind(capacity)
-        .execute(&state.db)
-        .await;
-    }
+    seed_floor_plan(&state.db, &restaurant_id).await;
 
     let result = sqlx::query(
         "INSERT INTO users (id, email, password_hash, name, role_id, team_id, restaurant_id, avatar_url, status, must_change_password, created_at)

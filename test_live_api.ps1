@@ -22,6 +22,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Guard against a mistyped/mis-bound base URL (e.g. a flag value landing here), which
+# otherwise surfaces as a confusing "Cannot reach the backend at <email>" later.
+if ($BaseUrl -notmatch '^https?://') {
+    Write-Host "Invalid -BaseUrl '$BaseUrl'. Expected something like http://127.0.0.1:8000" -ForegroundColor Red
+    exit 1
+}
+
 # 1. Fail fast (and clearly) when the backend is not running.
 try {
     Invoke-RestMethod -Uri "$BaseUrl/api/health" -Method Get -TimeoutSec 5 | Out-Null
@@ -34,6 +41,10 @@ catch {
 
 # 2. Resolve the restaurant id (from a login when credentials are supplied).
 if (-not $RestaurantId) {
+    if ($Email -and -not $Password) {
+        Write-Host "A -Password is required when using -Email." -ForegroundColor Red
+        exit 1
+    }
     if (-not ($Email -and $Password)) {
         Write-Host "No target restaurant given. Pass -Email and -Password, or -RestaurantId." -ForegroundColor Red
         Write-Host ""

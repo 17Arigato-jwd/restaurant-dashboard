@@ -163,13 +163,14 @@ export default function KDSPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-muted/10">
-      <div className="p-4 border-b bg-background flex justify-between items-center">
-        <div>
+      <div className="p-4 border-b bg-background flex flex-wrap justify-between items-center gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold">Kitchen Display System (KDS)</h1>
           <p className="text-sm text-muted-foreground mt-1">Live routing and SLA tracking.</p>
         </div>
 
-        <div className="flex gap-2">
+        {/* Wraps instead of overflowing so every station filter stays reachable. */}
+        <div className="flex flex-wrap gap-2">
           <Button variant={activeFilter === 'all' ? 'default' : 'outline'} onClick={() => setActiveFilter('all')}>All Stations</Button>
           <Button variant={activeFilter === 'tandoor' ? 'default' : 'outline'} onClick={() => setActiveFilter('tandoor')}><Flame className="w-4 h-4 mr-2"/> Tandoor</Button>
           <Button variant={activeFilter === 'main' ? 'default' : 'outline'} onClick={() => setActiveFilter('main')}><Utensils className="w-4 h-4 mr-2"/> Main Kitchen</Button>
