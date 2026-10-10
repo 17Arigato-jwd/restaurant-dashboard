@@ -1,29 +1,33 @@
 /* eslint-disable */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from "recharts";
 import { AlertTriangle, TrendingDown, ClipboardCheck, BookOpen } from "lucide-react";
+import { authHeaders } from "@/lib/api";
 
 interface Ingredient {
   id: string;
   name: string;
-  startStock: number; // kg
-  theoreticalSold: number; // kg calculated from POS
-  actualStock: number; // kg physically counted
+  startStock: number;
+  theoreticalSold: number;
+  actualStock: number;
   unit: string;
+  expiryDate: string;
 }
 
-const INITIAL_INVENTORY: Ingredient[] = [
-  { id: "ING1", name: "Fresh Paneer", startStock: 15.0, theoreticalSold: 8.5, actualStock: 6.5, unit: "kg" }, // exact match
-  { id: "ING2", name: "Amul Butter", startStock: 10.0, theoreticalSold: 4.2, actualStock: 5.0, unit: "kg" }, // 0.8kg missing!
-  { id: "ING3", name: "Chicken Breast", startStock: 20.0, theoreticalSold: 12.0, actualStock: 7.5, unit: "kg" }, // 0.5kg missing
-  { id: "ING4", name: "Basmati Rice", startStock: 50.0, theoreticalSold: 25.0, actualStock: 24.8, unit: "kg" }, // 0.2kg missing (within variance)
-];
+interface ApiInventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  expiryDate: string;
+}
 
 const RECIPE_GUIDE = [
   { dish: "Paneer Butter Masala", ingredients: ["150g Fresh Paneer", "50g Amul Butter", "200ml Base Gravy"] },
@@ -32,7 +36,42 @@ const RECIPE_GUIDE = [
 ];
 
 export default function InventoryPage() {
-  const [inventory, setInventory] = useState<Ingredient[]>(INITIAL_INVENTORY);
+  const [inventory, setInventory] = useState<Ingredient[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        const res = await fetch('/api/inventory-items', { headers: authHeaders() });
+        if (res.ok) {
+          const items: ApiInventoryItem[] = await res.json();
+          // Transform API items into the reconciliation model
+          const ingredients: Ingredient[] = items.map(item => {
+            // Simulate POS-consumed as ~60% of quantity for reconciliation
+            const theoreticalSold = +(item.quantity * 0.6).toFixed(2);
+            const theoreticalRemaining = +(item.quantity - theoreticalSold).toFixed(2);
+            // Small random variance to simulate physical count
+            const variance = +(Math.random() * 0.5).toFixed(2);
+            return {
+              id: item.id,
+              name: item.name,
+              startStock: item.quantity,
+              theoreticalSold,
+              actualStock: +(theoreticalRemaining - variance).toFixed(2),
+              unit: item.unit,
+              expiryDate: item.expiryDate,
+            };
+          });
+          setInventory(ingredients);
+        }
+      } catch (err) {
+        console.error("Failed to fetch inventory:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInventory();
+  }, []);
 
   const handleActualStockChange = (id: string, value: string) => {
     setInventory(prev => prev.map(ing => 
@@ -44,7 +83,7 @@ export default function InventoryPage() {
     return inventory.map(ing => {
       const theoreticalRemaining = ing.startStock - ing.theoreticalSold;
       const variance = theoreticalRemaining - ing.actualStock;
-      const variancePercent = (variance / ing.startStock) * 100;
+      const variancePercent = ing.startStock > 0 ? (variance / ing.startStock) * 100 : 0;
       
       const isCritical = variancePercent > 2.0;
 
@@ -54,7 +93,6 @@ export default function InventoryPage() {
         variance,
         variancePercent,
         isCritical,
-        // For Recharts
         "Theoretical Stock": Number(theoreticalRemaining.toFixed(2)),
         "Physical Count": Number(ing.actualStock.toFixed(2))
       };
@@ -63,6 +101,10 @@ export default function InventoryPage() {
 
   const data = processData();
   const criticalItems = data.filter(d => d.isCritical);
+
+  if (loading) {
+    return <div className="p-8 text-center">Loading inventory data...</div>;
+  }
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 overflow-y-auto h-[calc(100vh-4rem)]">
@@ -101,17 +143,23 @@ export default function InventoryPage() {
           </CardHeader>
           <CardContent>
             <div className="h-[350px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-20" />
-                  <XAxis dataKey="name" />
-                  <YAxis label={{ value: 'Stock (kg)', angle: -90, position: 'insideLeft' }} />
-                  <RechartsTooltip contentStyle={{ borderRadius: '8px' }} />
-                  <Legend />
-                  <Bar dataKey="Theoretical Stock" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Physical Count" fill="#10b981" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {data.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-20" />
+                    <XAxis dataKey="name" />
+                    <YAxis label={{ value: 'Stock (kg)', angle: -90, position: 'insideLeft' }} />
+                    <RechartsTooltip contentStyle={{ borderRadius: '8px' }} />
+                    <Legend />
+                    <Bar dataKey="Theoretical Stock" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Physical Count" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground italic">
+                  No inventory data. Add items via the Inventory Expiry Tracker.
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -155,11 +203,18 @@ export default function InventoryPage() {
                   <th className="px-4 py-3 text-blue-600">POS Consumed</th>
                   <th className="px-4 py-3 text-blue-600">Theor. Remaining</th>
                   <th className="px-4 py-3">Physical Count (Entry)</th>
+                  <th className="px-4 py-3">Expiry Date</th>
                   <th className="px-4 py-3 text-right">Variance</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {data.map(item => (
+                {data.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground italic">
+                      No inventory items found. Add stock via the Inventory Expiry Tracker.
+                    </td>
+                  </tr>
+                ) : data.map(item => (
                   <tr key={item.id} className={item.isCritical ? 'bg-red-50/50 dark:bg-red-950/10' : ''}>
                     <td className="px-4 py-3 font-medium">{item.name}</td>
                     <td className="px-4 py-3">{item.startStock.toFixed(2)} {item.unit}</td>
@@ -175,6 +230,7 @@ export default function InventoryPage() {
                         <span className="text-muted-foreground">{item.unit}</span>
                       </div>
                     </td>
+                    <td className="px-4 py-3 text-muted-foreground">{new Date(item.expiryDate).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-right">
                       {item.variance > 0 ? (
                         <Badge variant="destructive" className={item.isCritical ? "animate-pulse" : "bg-amber-500"}>

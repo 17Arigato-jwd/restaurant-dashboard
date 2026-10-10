@@ -42,6 +42,9 @@ struct DbUser {
     status: String,
     must_change_password: i64,
     created_at: String,
+    dish_specialty: Option<String>,
+    weekly_schedule: Option<String>,
+    leave_status: Option<String>,
 }
 
 #[derive(FromRow)]
@@ -75,6 +78,9 @@ struct UserResponse {
     must_change_password: bool,
     created_at: String,
     role: Option<RoleResponse>,
+    dish_specialty: Option<String>,
+    weekly_schedule: Option<String>,
+    leave_status: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -147,6 +153,9 @@ struct UserUpdateRequest {
     team_id: Option<String>,
     avatar_url: Option<String>,
     status: Option<String>,
+    dish_specialty: Option<String>,
+    weekly_schedule: Option<String>,
+    leave_status: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -234,6 +243,9 @@ async fn to_user_response(pool: &SqlitePool, user: &DbUser) -> UserResponse {
         must_change_password: user.must_change_password != 0,
         created_at: user.created_at.clone(),
         role: role_by_id(pool, &user.role_id).await,
+        dish_specialty: user.dish_specialty.clone(),
+        weekly_schedule: user.weekly_schedule.clone(),
+        leave_status: user.leave_status.clone(),
     }
 }
 
@@ -380,11 +392,34 @@ async fn main() {
             invoice_no TEXT NOT NULL,
             sent_at TEXT NOT NULL
         );",
+        "CREATE TABLE IF NOT EXISTS employee_shifts (
+            id TEXT PRIMARY KEY,
+            restaurant_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            user_name TEXT NOT NULL,
+            day TEXT NOT NULL,
+            start_time TEXT NOT NULL,
+            end_time TEXT NOT NULL,
+            role_label TEXT NOT NULL DEFAULT '',
+            FOREIGN KEY(restaurant_id) REFERENCES restaurants(id)
+        );",
+        "CREATE TABLE IF NOT EXISTS inventory_items (
+            id TEXT PRIMARY KEY,
+            restaurant_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'General',
+            quantity REAL NOT NULL,
+            unit TEXT NOT NULL DEFAULT 'kg',
+            expiry_date TEXT NOT NULL,
+            added_at TEXT NOT NULL,
+            FOREIGN KEY(restaurant_id) REFERENCES restaurants(id)
+        );",
         "INSERT OR IGNORE INTO roles (id, name, level, can_edit_levels_above)
          VALUES ('r1', 'Owner', 1, 1),
                 ('r2', 'Store Manager', 2, 2),
                 ('r3', 'Cashier', 3, 999),
-                ('r4', 'Janitor', 4, 999);",
+                ('r4', 'Janitor', 4, 999),
+                ('r5', 'Chef', 3, 999);",
     ];
     for query in queries {
         sqlx::query(query)
@@ -401,6 +436,9 @@ async fn main() {
         "ALTER TABLE restaurants ADD COLUMN fssai TEXT",
         "ALTER TABLE restaurants ADD COLUMN logo_url TEXT",
         "ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN dish_specialty TEXT",
+        "ALTER TABLE users ADD COLUMN weekly_schedule TEXT",
+        "ALTER TABLE users ADD COLUMN leave_status TEXT",
     ];
     for alter in alters {
         let _ = sqlx::query(alter).execute(&pool).await;
@@ -448,6 +486,12 @@ async fn main() {
         .route("/api/webhooks/orders", post(webhook_orders))
         .route("/api/webhooks/fleet", post(webhook_fleet))
         .route("/api/webhooks/analytics", post(webhook_analytics))
+        // Employee Shifts
+        .route("/api/shifts", get(list_shifts).post(create_shift))
+        .route("/api/shifts/{id}", axum::routing::delete(delete_shift))
+        // Inventory Expiry
+        .route("/api/inventory-items", get(list_inventory_items).post(create_inventory_item))
+        .route("/api/inventory-items/{id}", axum::routing::delete(delete_inventory_item))
         .with_state(state)
         .layer(cors);
 
@@ -1093,7 +1137,10 @@ async fn update_user(
             role_id = COALESCE(?, role_id),
             team_id = COALESCE(?, team_id),
             avatar_url = COALESCE(?, avatar_url),
-            status = COALESCE(?, status)
+            status = COALESCE(?, status),
+            dish_specialty = COALESCE(?, dish_specialty),
+            weekly_schedule = COALESCE(?, weekly_schedule),
+            leave_status = COALESCE(?, leave_status)
          WHERE id = ?",
     )
     .bind(&payload.name)
@@ -1102,6 +1149,9 @@ async fn update_user(
     .bind(&payload.team_id)
     .bind(&payload.avatar_url)
     .bind(&payload.status)
+    .bind(&payload.dish_specialty)
+    .bind(&payload.weekly_schedule)
+    .bind(&payload.leave_status)
     .bind(&id)
     .execute(&state.db)
     .await;
@@ -1757,4 +1807,242 @@ async fn webhook_analytics(
     .await;
 
     (StatusCode::OK, Json(json!({ "ok": true }))).into_response()
+}
+
+// ---------------------------------------------------------------- Employee Shifts
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ShiftResponse {
+    id: String,
+    restaurant_id: String,
+    user_id: String,
+    user_name: String,
+    day: String,
+    start_time: String,
+    end_time: String,
+    role_label: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateShiftRequest {
+    user_id: String,
+    user_name: String,
+    day: String,
+    start_time: String,
+    end_time: String,
+    role_label: String,
+}
+
+async fn list_shifts(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let claims = match claims_from(&headers) {
+        Some(claims) => claims,
+        None => return unauthorized(),
+    };
+
+    let rows: Vec<(String, String, String, String, String, String, String, String)> = sqlx::query_as(
+        "SELECT id, restaurant_id, user_id, user_name, day, start_time, end_time, role_label FROM employee_shifts WHERE restaurant_id = ?"
+    )
+    .bind(&claims.restaurant_id)
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    let mut shifts = Vec::new();
+    for (id, restaurant_id, user_id, user_name, day, start_time, end_time, role_label) in rows {
+        shifts.push(ShiftResponse { id, restaurant_id, user_id, user_name, day, start_time, end_time, role_label });
+    }
+
+    (StatusCode::OK, Json(shifts)).into_response()
+}
+
+async fn create_shift(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(payload): Json<CreateShiftRequest>,
+) -> impl IntoResponse {
+    let claims = match claims_from(&headers) {
+        Some(claims) => claims,
+        None => return unauthorized(),
+    };
+
+    let id = format!("shift_{}", Uuid::new_v4().simple());
+    
+    let result = sqlx::query(
+        "INSERT INTO employee_shifts (id, restaurant_id, user_id, user_name, day, start_time, end_time, role_label)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    )
+    .bind(&id)
+    .bind(&claims.restaurant_id)
+    .bind(&payload.user_id)
+    .bind(&payload.user_name)
+    .bind(&payload.day)
+    .bind(&payload.start_time)
+    .bind(&payload.end_time)
+    .bind(&payload.role_label)
+    .execute(&state.db)
+    .await;
+
+    match result {
+        Ok(_) => (StatusCode::CREATED, Json(ShiftResponse {
+            id,
+            restaurant_id: claims.restaurant_id,
+            user_id: payload.user_id,
+            user_name: payload.user_name,
+            day: payload.day,
+            start_time: payload.start_time,
+            end_time: payload.end_time,
+            role_label: payload.role_label,
+        })).into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": format!("Failed to create shift: {}", error) }))
+        ).into_response()
+    }
+}
+
+async fn delete_shift(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let claims = match claims_from(&headers) {
+        Some(claims) => claims,
+        None => return unauthorized(),
+    };
+
+    let result = sqlx::query("DELETE FROM employee_shifts WHERE id = ? AND restaurant_id = ?")
+        .bind(&id)
+        .bind(&claims.restaurant_id)
+        .execute(&state.db)
+        .await;
+        
+    match result {
+        Ok(done) if done.rows_affected() > 0 => StatusCode::NO_CONTENT.into_response(),
+        _ => (StatusCode::NOT_FOUND, Json(json!({ "error": "Shift not found" }))).into_response()
+    }
+}
+
+// ---------------------------------------------------------------- Inventory Items
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct InventoryItemResponse {
+    id: String,
+    restaurant_id: String,
+    name: String,
+    category: String,
+    quantity: f64,
+    unit: String,
+    expiry_date: String,
+    added_at: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateInventoryItemRequest {
+    name: String,
+    category: Option<String>,
+    quantity: f64,
+    unit: Option<String>,
+    expiry_date: String,
+}
+
+async fn list_inventory_items(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let claims = match claims_from(&headers) {
+        Some(claims) => claims,
+        None => return unauthorized(),
+    };
+
+    let rows: Vec<(String, String, String, String, f64, String, String, String)> = sqlx::query_as(
+        "SELECT id, restaurant_id, name, category, quantity, unit, expiry_date, added_at FROM inventory_items WHERE restaurant_id = ? ORDER BY expiry_date ASC"
+    )
+    .bind(&claims.restaurant_id)
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    let mut items = Vec::new();
+    for (id, restaurant_id, name, category, quantity, unit, expiry_date, added_at) in rows {
+        items.push(InventoryItemResponse { id, restaurant_id, name, category, quantity, unit, expiry_date, added_at });
+    }
+
+    (StatusCode::OK, Json(items)).into_response()
+}
+
+async fn create_inventory_item(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(payload): Json<CreateInventoryItemRequest>,
+) -> impl IntoResponse {
+    let claims = match claims_from(&headers) {
+        Some(claims) => claims,
+        None => return unauthorized(),
+    };
+
+    let id = format!("inv_{}", Uuid::new_v4().simple());
+    let now = Utc::now().to_rfc3339();
+    let category = payload.category.unwrap_or_else(|| "General".to_string());
+    let unit = payload.unit.unwrap_or_else(|| "kg".to_string());
+
+    let result = sqlx::query(
+        "INSERT INTO inventory_items (id, restaurant_id, name, category, quantity, unit, expiry_date, added_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    )
+    .bind(&id)
+    .bind(&claims.restaurant_id)
+    .bind(&payload.name)
+    .bind(&category)
+    .bind(&payload.quantity)
+    .bind(&unit)
+    .bind(&payload.expiry_date)
+    .bind(&now)
+    .execute(&state.db)
+    .await;
+
+    match result {
+        Ok(_) => (StatusCode::CREATED, Json(InventoryItemResponse {
+            id,
+            restaurant_id: claims.restaurant_id,
+            name: payload.name,
+            category,
+            quantity: payload.quantity,
+            unit,
+            expiry_date: payload.expiry_date,
+            added_at: now,
+        })).into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": format!("Failed to create inventory item: {}", error) }))
+        ).into_response()
+    }
+}
+
+async fn delete_inventory_item(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let claims = match claims_from(&headers) {
+        Some(claims) => claims,
+        None => return unauthorized(),
+    };
+
+    let result = sqlx::query("DELETE FROM inventory_items WHERE id = ? AND restaurant_id = ?")
+        .bind(&id)
+        .bind(&claims.restaurant_id)
+        .execute(&state.db)
+        .await;
+        
+    match result {
+        Ok(done) if done.rows_affected() > 0 => StatusCode::NO_CONTENT.into_response(),
+        _ => (StatusCode::NOT_FOUND, Json(json!({ "error": "Inventory item not found" }))).into_response()
+    }
 }

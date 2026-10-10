@@ -29,6 +29,9 @@ interface TeamMember {
   avatarUrl?: string;
   status?: string;
   role?: RoleInfo;
+  dishSpecialty?: string;
+  weeklySchedule?: string;
+  leaveStatus?: string;
 }
 
 export function TeamManagement() {
@@ -38,6 +41,8 @@ export function TeamManagement() {
   const [roles, setRoles] = useState<RoleInfo[]>([]);
   const { currentUser } = useAppStore();
   const currentLevel = roleLevelOf(currentUser);
+
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     const res = await fetch('/api/team', { headers: authHeaders() });
@@ -138,73 +143,75 @@ export function TeamManagement() {
       {users.map((user) => {
         const isSelf = user.id === currentUser?.id;
         const canEdit = isSelf || canManageLevel(currentLevel, user.role?.level ?? null);
+        const isExpanded = expandedUserId === user.id;
 
         return (
-          <div key={user.id} className={`p-4 border-2 border-border rounded-base flex flex-col md:flex-row md:items-center justify-between bg-background ${user.status === 'pending' ? 'opacity-60' : ''}`}>
-            <div className="flex items-center space-x-4 mb-4 md:mb-0">
-              <Avatar className="size-10 shrink-0">
-                {user.avatarUrl ? (
-                  <AvatarImage src={user.avatarUrl} alt={user.name} />
-                ) : (
-                  <AvatarFallback className="bg-main text-main-foreground font-bold">
-                    {user.name.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                )}
-                {user.role && (
-                  <AvatarBadge className={getRoleBadgeColor(user.role.level)}>
-                    {getRoleIcon(user.role.level)}
-                  </AvatarBadge>
-                )}
-              </Avatar>
-              <div>
-                <h4 className="font-bold text-sm">{user.name} {isSelf && "(You)"}</h4>
-                <p className="text-xs text-muted-foreground">{user.email}</p>
+          <div key={user.id} className={`p-4 border-2 border-border rounded-base flex flex-col justify-between bg-background ${user.status === 'pending' ? 'opacity-60' : ''}`}>
+            <div className="flex flex-col md:flex-row md:items-center justify-between cursor-pointer group" onClick={() => router.push(`/team-member/${user.id}`)}>
+              <div className="flex items-center space-x-4 mb-4 md:mb-0">
+                <Avatar className="size-10 shrink-0">
+                  {user.avatarUrl ? (
+                    <AvatarImage src={user.avatarUrl} alt={user.name} />
+                  ) : (
+                    <AvatarFallback className="bg-main text-main-foreground font-bold">
+                      {user.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  )}
+                  {user.role && (
+                    <AvatarBadge className={getRoleBadgeColor(user.role.level)}>
+                      {getRoleIcon(user.role.level)}
+                    </AvatarBadge>
+                  )}
+                </Avatar>
+                <div>
+                  <h4 className="font-bold text-sm group-hover:underline">{user.name} {isSelf && "(You)"}</h4>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center gap-2">
-                {/* Higher roles may edit lower-level accounts */}
+              <div className="flex items-center space-x-4" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2">
+                  {!isSelf && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!canEdit}
+                      title={canEdit ? "Edit profile" : "You cannot edit an account with an equal or higher role"}
+                      onClick={() => router.push(`/account/team/${user.id}`)}
+                    >
+                      <FileEdit className="w-4 h-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  )}
+                </div>
+
+                <Badge variant={user.role?.level === 1 ? "default" : "outline"} className={user.role?.level === 1 ? "bg-main text-main-foreground" : ""}>
+                  {user.role?.name || 'Unknown Role'}
+                </Badge>
+
                 {!isSelf && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!canEdit}
-                    title={canEdit ? "Edit profile" : "You cannot edit an account with an equal or higher role"}
-                    onClick={() => router.push(`/account/team/${user.id}`)}
-                  >
-                    <FileEdit className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger render={<Button variant="ghost" size="icon" disabled={!canEdit} className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-40" />} >
+                      <Trash2 className="w-4 h-4" />
+                    </AlertDialogTrigger>
+                    <AlertDialogContent size="sm">
+                      <AlertDialogHeader>
+                        <AlertDialogMedia className="bg-black text-white">
+                          <Trash2 className="w-6 h-6" />
+                        </AlertDialogMedia>
+                        <AlertDialogTitle>Delete user?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete this user from the team. They will no longer have access to the dashboard.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-red-600 hover:bg-red-700 text-white">Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
               </div>
-
-              <Badge variant={user.role?.level === 1 ? "default" : "outline"} className={user.role?.level === 1 ? "bg-main text-main-foreground" : ""}>
-                {user.role?.name || 'Unknown Role'}
-              </Badge>
-
-              {!isSelf && (
-                <AlertDialog>
-                  <AlertDialogTrigger render={<Button variant="ghost" size="icon" disabled={!canEdit} className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-40" />} >
-                    <Trash2 className="w-4 h-4" />
-                  </AlertDialogTrigger>
-                  <AlertDialogContent size="sm">
-                    <AlertDialogHeader>
-                      <AlertDialogMedia className="bg-black text-white">
-                        <Trash2 className="w-6 h-6" />
-                      </AlertDialogMedia>
-                      <AlertDialogTitle>Delete user?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently delete this user from the team. They will no longer have access to the dashboard.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-red-600 hover:bg-red-700 text-white">Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
             </div>
           </div>
         )

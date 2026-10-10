@@ -20,6 +20,9 @@ export function EditUserForm({ userId }: { userId: string }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("+91 98765 43210");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [dishSpecialty, setDishSpecialty] = useState("");
+  const [weeklySchedule, setWeeklySchedule] = useState("");
+  const [leaveStatus, setLeaveStatus] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,6 +34,9 @@ export function EditUserForm({ userId }: { userId: string }) {
           setName(data.name || "");
           setEmail(data.email || "");
           setAvatarUrl(data.avatarUrl || "");
+          setDishSpecialty(data.dishSpecialty || "");
+          setWeeklySchedule(data.weeklySchedule || "");
+          setLeaveStatus(data.leaveStatus || "");
         } else {
           toast.add({ type: "error", title: "Error", description: "Failed to load user data." });
         }
@@ -48,7 +54,7 @@ export function EditUserForm({ userId }: { userId: string }) {
       const res = await fetch(`/api/team/${userId}`, {
         method: 'PUT',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ name, email, avatarUrl })
+        body: JSON.stringify({ name, email, avatarUrl, dishSpecialty, weeklySchedule, leaveStatus })
       });
       if (res.ok) {
         toast.add({ type: "success", title: "Success", description: "User details updated." });
@@ -115,6 +121,20 @@ export function EditUserForm({ userId }: { userId: string }) {
             <div className="space-y-2">
               <Label>Last Name</Label>
               <Input value={lastName} onChange={(e) => setName(firstName + " " + e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Dish Specialty</Label>
+              <Input value={dishSpecialty} onChange={(e) => setDishSpecialty(e.target.value)} placeholder="e.g. Italian, Pastry" />
+            </div>
+            <div className="space-y-2">
+              <Label>Weekly Schedule</Label>
+              <Input value={weeklySchedule} onChange={(e) => setWeeklySchedule(e.target.value)} placeholder="e.g. Mon-Fri, 9am-5pm" />
+            </div>
+            <div className="space-y-2">
+              <Label>Leave Status</Label>
+              <Input value={leaveStatus} onChange={(e) => setLeaveStatus(e.target.value)} placeholder="e.g. On Leave, Active" />
             </div>
           </div>
           <div className="space-y-2">
