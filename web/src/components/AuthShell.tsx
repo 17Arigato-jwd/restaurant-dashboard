@@ -34,6 +34,18 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   const blockedByRole =
     !isPublic && token && level != null && pageMaxLevel != null && level > pageMaxLevel;
 
+  const fetchLiveTables = useAppStore((state) => state.fetchLiveTables);
+
+  useEffect(() => {
+    if (token && hydrated && !isPublic) {
+      let active = true;
+      const poll = () => { if (active) fetchLiveTables(); };
+      poll();
+      const interval = setInterval(poll, 3000);
+      return () => { active = false; clearInterval(interval); };
+    }
+  }, [token, hydrated, isPublic, fetchLiveTables]);
+
   useEffect(() => {
     if (!hydrated) return;
     if (!isPublic && !token) {

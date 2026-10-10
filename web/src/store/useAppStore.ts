@@ -83,18 +83,8 @@ interface AppState {
   updateTableState: (id: string, newState: TableState) => void;
   addOrderToTable: (id: string, order: OrderItem) => void;
   settleTable: (id: string) => void;
+  fetchLiveTables: () => Promise<void>;
 }
-
-const initialTables: Table[] = [
-  { id: 'T1', name: 'T-01', capacity: 2, state: 'available', orders: [] },
-  { id: 'T2', name: 'T-02', capacity: 2, state: 'seated', seatedAt: Date.now() - 300000, orders: [], waiter: 'Rahul' },
-  { id: 'T3', name: 'T-03', capacity: 4, state: 'ordered', seatedAt: Date.now() - 1500000, orders: [{ id: '1', name: 'Butter Chicken', price: 340, qty: 1 }, { id: '2', name: 'Garlic Naan', price: 60, qty: 3 }], waiter: 'Amit' },
-  { id: 'T4', name: 'T-04', capacity: 4, state: 'billed', seatedAt: Date.now() - 3600000, orders: [{ id: '3', name: 'Paneer Tikka', price: 280, qty: 1 }], waiter: 'Amit' },
-  { id: 'T5', name: 'T-05', capacity: 6, state: 'available', orders: [] },
-  { id: 'T6', name: 'T-06', capacity: 6, state: 'available', orders: [] },
-  { id: 'T7', name: 'T-07', capacity: 2, state: 'available', orders: [] },
-  { id: 'T8', name: 'T-08', capacity: 4, state: 'available', orders: [] },
-];
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -159,7 +149,20 @@ export const useAppStore = create<AppState>()(
       cancelEmergencyPause: () => set({ isEmergencyPaused: false, pauseTimerRemaining: 0 }),
 
       // Tables
-      tables: initialTables,
+      tables: [],
+      fetchLiveTables: async () => {
+        const { token } = get();
+        if (!token) return;
+        try {
+          const res = await fetch('http://127.0.0.1:8000/api/tables', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            set({ tables: data });
+          }
+        } catch (e) { console.error("Failed to fetch live tables:", e); }
+      },
       updateTableState: (id, newState) => set((state) => ({
         tables: state.tables.map(t => {
           if (t.id === id) {

@@ -334,6 +334,52 @@ async fn main() {
             data TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );",
+        "CREATE TABLE IF NOT EXISTS tables (
+            id TEXT PRIMARY KEY,
+            restaurant_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            capacity INTEGER NOT NULL,
+            state TEXT NOT NULL,
+            waiter TEXT,
+            seated_at INTEGER,
+            FOREIGN KEY(restaurant_id) REFERENCES restaurants(id)
+        );",
+        "CREATE TABLE IF NOT EXISTS orders (
+            id TEXT PRIMARY KEY,
+            table_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            price REAL NOT NULL,
+            qty INTEGER NOT NULL,
+            FOREIGN KEY(table_id) REFERENCES tables(id)
+        );",
+        "CREATE TABLE IF NOT EXISTS delivery_fleet (
+            driver_id TEXT PRIMARY KEY,
+            restaurant_id TEXT NOT NULL,
+            driver_lat REAL NOT NULL,
+            driver_lng REAL NOT NULL,
+            status TEXT NOT NULL,
+            customer_lat REAL NOT NULL,
+            customer_lng REAL NOT NULL,
+            last_updated TEXT NOT NULL,
+            FOREIGN KEY(restaurant_id) REFERENCES restaurants(id)
+        );",
+        "CREATE TABLE IF NOT EXISTS customer_analytics (
+            date TEXT NOT NULL,
+            restaurant_id TEXT NOT NULL,
+            dine_in_count INTEGER NOT NULL,
+            delivery_count INTEGER NOT NULL,
+            PRIMARY KEY(date, restaurant_id),
+            FOREIGN KEY(restaurant_id) REFERENCES restaurants(id)
+        );",
+        "CREATE TABLE IF NOT EXISTS whatsapp_logs (
+            id TEXT PRIMARY KEY,
+            restaurant_id TEXT NOT NULL,
+            table_id TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            bill_total TEXT NOT NULL,
+            invoice_no TEXT NOT NULL,
+            sent_at TEXT NOT NULL
+        );",
         "INSERT OR IGNORE INTO roles (id, name, level, can_edit_levels_above)
          VALUES ('r1', 'Owner', 1, 1),
                 ('r2', 'Store Manager', 2, 2),
@@ -395,6 +441,13 @@ async fn main() {
         // Integrations (kept from the original backend)
         .route("/api/whatsapp/send-bill", post(send_whatsapp_bill))
         .route("/api/delivery/tracking", get(get_delivery_tracking))
+        // Webhooks and Live API data
+        .route("/api/tables", get(get_tables))
+        .route("/api/analytics", get(get_analytics))
+        .route("/api/webhooks/tables", post(webhook_tables))
+        .route("/api/webhooks/orders", post(webhook_orders))
+        .route("/api/webhooks/fleet", post(webhook_fleet))
+        .route("/api/webhooks/analytics", post(webhook_analytics))
         .with_state(state)
         .layer(cors);
 
@@ -1385,10 +1438,11 @@ async fn update_restaurant(
     }
 }
 
-// ---------------------------------------------------------------- Integrations
+// ---------------------------------------------------------------- Integrations & Live APIs
 
 #[derive(Deserialize)]
 struct WhatsAppBillRequest {
+    restaurant_id: String,
     table_id: String,
     phone: String,
     bill_total: String,
@@ -1401,23 +1455,30 @@ struct WhatsAppResponse {
     message_id: String,
 }
 
-async fn send_whatsapp_bill(Json(payload): Json<WhatsAppBillRequest>) -> impl IntoResponse {
-    println!(
-        "Simulating WhatsApp bill send to {} for table {}",
-        payload.phone, payload.table_id
-    );
+async fn send_whatsapp_bill(
+    State(state): State<AppState>,
+    Json(payload): Json<WhatsAppBillRequest>,
+) -> impl IntoResponse {
+    let message_id = format!("wamid.{}", Uuid::new_v4().simple());
+    let now = Utc::now().to_rfc3339();
+
+    let _ = sqlx::query(
+        "INSERT INTO whatsapp_logs (id, restaurant_id, table_id, phone, bill_total, invoice_no, sent_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)"
+    )
+    .bind(&message_id)
+    .bind(&payload.restaurant_id)
+    .bind(&payload.table_id)
+    .bind(&payload.phone)
+    .bind(&payload.bill_total)
+    .bind(&payload.invoice_no)
+    .bind(&now)
+    .execute(&state.db)
+    .await;
 
     let response = WhatsAppResponse {
         ok: true,
-        message_id: format!(
-            "wamid.mock.{}",
-            Uuid::new_v4()
-                .to_string()
-                .replace('-', "")
-                .chars()
-                .take(10)
-                .collect::<String>()
-        ),
+        message_id,
     };
 
     (StatusCode::OK, Json(response)).into_response()
@@ -1437,75 +1498,24 @@ struct DeliveryData {
     route: Vec<[f64; 2]>,
 }
 
-async fn get_delivery_tracking() -> impl IntoResponse {
+async fn get_delivery_tracking(
+    State(state): State<AppState>,
+) -> impl IntoResponse {
     let restaurant_loc = [12.9345, 77.6265];
-
-    let routes = vec![
-        vec![
-            [12.9360, 77.6230],
-            restaurant_loc,
-            [12.9330, 77.6266],
-            [12.9312, 77.6268],
-            [12.9290, 77.6270],
-            [12.9279, 77.6271],
-        ],
-        vec![
-            [12.9320, 77.6290],
-            restaurant_loc,
-            [12.9360, 77.6250],
-            [12.9390, 77.6220],
-            [12.9420, 77.6190],
-        ],
-        vec![
-            [12.9380, 77.6280],
-            restaurant_loc,
-            [12.9250, 77.6300],
-            [12.9150, 77.6350],
-            [12.9080, 77.6390],
-        ],
-        vec![
-            [12.9310, 77.6240],
-            restaurant_loc,
-            [12.9320, 77.6200],
-            [12.9250, 77.6150],
-            [12.9200, 77.6100],
-            [12.9160, 77.6050],
-        ],
-        vec![
-            [12.9355, 77.6270],
-            restaurant_loc,
-            [12.9350, 77.6285],
-            [12.9365, 77.6295],
-        ],
-    ];
-
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
+    let rows: Vec<(String, f64, f64, f64, f64)> = sqlx::query_as(
+        "SELECT driver_id, driver_lat, driver_lng, customer_lat, customer_lng FROM delivery_fleet"
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
 
     let mut deliveries = Vec::new();
-
-    for (i, route) in routes.iter().enumerate() {
-        let cycle_duration = 20 + (i as u64 * 5);
-        let progress = ((now + (i as u64 * 13)) % cycle_duration) as f64 / cycle_duration as f64;
-
-        let total_segments = (route.len() - 1) as f64;
-        let current_segment_f = progress * total_segments;
-        let current_segment = current_segment_f.floor() as usize;
-        let segment_progress = current_segment_f - current_segment_f.floor();
-
-        let p1 = route[current_segment];
-        let p2 = route[current_segment + 1];
-
-        let current_lat = p1[0] + (p2[0] - p1[0]) * segment_progress;
-        let current_lng = p1[1] + (p2[1] - p1[1]) * segment_progress;
-
+    for (id, d_lat, d_lng, c_lat, c_lng) in rows {
         deliveries.push(DeliveryData {
-            id: format!("driver-{i}"),
-            customer: *route.last().unwrap(),
-            driver: [current_lat, current_lng],
-            route: route.clone(),
+            id,
+            customer: [c_lat, c_lng],
+            driver: [d_lat, d_lng],
+            route: vec![restaurant_loc, [c_lat, c_lng]],
         });
     }
 
@@ -1515,4 +1525,236 @@ async fn get_delivery_tracking() -> impl IntoResponse {
     };
 
     (StatusCode::OK, Json(response)).into_response()
+}
+
+// ---------------------------------------------------------------- Webhooks (Live API Ingestion)
+
+#[derive(Serialize)]
+struct TableItem {
+    id: String,
+    name: String,
+    capacity: i64,
+    state: String,
+    waiter: Option<String>,
+    seated_at: Option<i64>,
+    orders: Vec<OrderItem>,
+}
+
+#[derive(Serialize)]
+struct OrderItem {
+    id: String,
+    name: String,
+    price: f64,
+    qty: i64,
+}
+
+async fn get_tables(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let claims = match claims_from(&headers) {
+        Some(claims) => claims,
+        None => return unauthorized(),
+    };
+    
+    let table_rows: Vec<(String, String, i64, String, Option<String>, Option<i64>)> = sqlx::query_as(
+        "SELECT id, name, capacity, state, waiter, seated_at FROM tables WHERE restaurant_id = ?"
+    )
+    .bind(&claims.restaurant_id)
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    let mut tables = Vec::new();
+    for (id, name, capacity, state_val, waiter, seated_at) in table_rows {
+        let order_rows: Vec<(String, String, f64, i64)> = sqlx::query_as(
+            "SELECT id, name, price, qty FROM orders WHERE table_id = ?"
+        )
+        .bind(&id)
+        .fetch_all(&state.db)
+        .await
+        .unwrap_or_default();
+
+        let mut orders = Vec::new();
+        for (oid, oname, price, qty) in order_rows {
+            orders.push(OrderItem { id: oid, name: oname, price, qty });
+        }
+
+        tables.push(TableItem {
+            id: id.clone(),
+            name,
+            capacity,
+            state: state_val,
+            waiter,
+            seated_at,
+            orders,
+        });
+    }
+
+    (StatusCode::OK, Json(tables)).into_response()
+}
+
+#[derive(Deserialize)]
+struct WebhookTableRequest {
+    restaurant_id: String,
+    id: String,
+    name: String,
+    capacity: i64,
+    state: String,
+    waiter: Option<String>,
+}
+
+async fn webhook_tables(
+    State(state): State<AppState>,
+    Json(payload): Json<WebhookTableRequest>,
+) -> impl IntoResponse {
+    let now = Utc::now().timestamp();
+    let seated_at = if payload.state == "seated" { Some(now) } else { None };
+
+    let _ = sqlx::query(
+        "INSERT INTO tables (id, restaurant_id, name, capacity, state, waiter, seated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET state=excluded.state, waiter=excluded.waiter, seated_at=excluded.seated_at, capacity=excluded.capacity, name=excluded.name"
+    )
+    .bind(&payload.id)
+    .bind(&payload.restaurant_id)
+    .bind(&payload.name)
+    .bind(&payload.capacity)
+    .bind(&payload.state)
+    .bind(&payload.waiter)
+    .bind(&seated_at)
+    .execute(&state.db)
+    .await;
+
+    (StatusCode::OK, Json(json!({ "ok": true }))).into_response()
+}
+
+#[derive(Deserialize)]
+struct WebhookOrderRequest {
+    id: String,
+    table_id: String,
+    name: String,
+    price: f64,
+    qty: i64,
+}
+
+async fn webhook_orders(
+    State(state): State<AppState>,
+    Json(payload): Json<WebhookOrderRequest>,
+) -> impl IntoResponse {
+    let _ = sqlx::query(
+        "INSERT INTO orders (id, table_id, name, price, qty)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET qty=excluded.qty"
+    )
+    .bind(&payload.id)
+    .bind(&payload.table_id)
+    .bind(&payload.name)
+    .bind(&payload.price)
+    .bind(&payload.qty)
+    .execute(&state.db)
+    .await;
+
+    // Also mark table as ordered
+    let _ = sqlx::query("UPDATE tables SET state = 'ordered' WHERE id = ?")
+        .bind(&payload.table_id)
+        .execute(&state.db)
+        .await;
+
+    (StatusCode::OK, Json(json!({ "ok": true }))).into_response()
+}
+
+#[derive(Deserialize)]
+struct WebhookFleetRequest {
+    driver_id: String,
+    restaurant_id: String,
+    driver_lat: f64,
+    driver_lng: f64,
+    status: String,
+    customer_lat: f64,
+    customer_lng: f64,
+}
+
+async fn webhook_fleet(
+    State(state): State<AppState>,
+    Json(payload): Json<WebhookFleetRequest>,
+) -> impl IntoResponse {
+    let now = Utc::now().to_rfc3339();
+    let _ = sqlx::query(
+        "INSERT INTO delivery_fleet (driver_id, restaurant_id, driver_lat, driver_lng, status, customer_lat, customer_lng, last_updated)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(driver_id) DO UPDATE SET driver_lat=excluded.driver_lat, driver_lng=excluded.driver_lng, status=excluded.status, last_updated=excluded.last_updated"
+    )
+    .bind(&payload.driver_id)
+    .bind(&payload.restaurant_id)
+    .bind(&payload.driver_lat)
+    .bind(&payload.driver_lng)
+    .bind(&payload.status)
+    .bind(&payload.customer_lat)
+    .bind(&payload.customer_lng)
+    .bind(&now)
+    .execute(&state.db)
+    .await;
+
+    (StatusCode::OK, Json(json!({ "ok": true }))).into_response()
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AnalyticsData {
+    date: String,
+    dine_in: i64,
+    delivery: i64,
+}
+
+async fn get_analytics(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let claims = match claims_from(&headers) {
+        Some(claims) => claims,
+        None => return unauthorized(),
+    };
+
+    let rows: Vec<(String, i64, i64)> = sqlx::query_as(
+        "SELECT date, dine_in_count, delivery_count FROM customer_analytics WHERE restaurant_id = ? ORDER BY date ASC"
+    )
+    .bind(&claims.restaurant_id)
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    let mut results = Vec::new();
+    for (date, dine_in, delivery) in rows {
+        results.push(AnalyticsData { date, dine_in, delivery });
+    }
+
+    (StatusCode::OK, Json(results)).into_response()
+}
+
+#[derive(Deserialize)]
+struct WebhookAnalyticsRequest {
+    date: String,
+    restaurant_id: String,
+    dine_in_count: i64,
+    delivery_count: i64,
+}
+
+async fn webhook_analytics(
+    State(state): State<AppState>,
+    Json(payload): Json<WebhookAnalyticsRequest>,
+) -> impl IntoResponse {
+    let _ = sqlx::query(
+        "INSERT INTO customer_analytics (date, restaurant_id, dine_in_count, delivery_count)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(date, restaurant_id) DO UPDATE SET dine_in_count=excluded.dine_in_count, delivery_count=excluded.delivery_count"
+    )
+    .bind(&payload.date)
+    .bind(&payload.restaurant_id)
+    .bind(&payload.dine_in_count)
+    .bind(&payload.delivery_count)
+    .execute(&state.db)
+    .await;
+
+    (StatusCode::OK, Json(json!({ "ok": true }))).into_response()
 }
