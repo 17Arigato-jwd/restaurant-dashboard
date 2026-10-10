@@ -3,11 +3,14 @@
 
 import { useState, useEffect } from "react";
 import { useAppStore, Table, TableState } from "@/store/useAppStore";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Clock, Users, Coffee, Check, Receipt, X, Send } from "lucide-react";
 import { ManagerPinModal } from "@/components/ManagerPinModal";
+import { authHeaders } from "@/lib/api";
+import { toast } from "@/components/ui/toast";
 
 const STATE_COLORS: Record<TableState, string> = {
   available: "bg-muted hover:bg-muted/80 text-muted-foreground",
@@ -17,13 +20,21 @@ const STATE_COLORS: Record<TableState, string> = {
 };
 
 export default function TablesPage() {
-  const { tables, updateTableState, settleTable, addOrderToTable } = useAppStore();
-  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const { tables, updateTableState, settleTable, placeOrder, currentUser } = useAppStore();
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [waStatus, setWaStatus] = useState<"idle" | "loading" | "success">("idle");
   const [mounted, setMounted] = useState(false);
-  
+
+  // Quick-add form for new KOT line items (persisted through the API).
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemPrice, setNewItemPrice] = useState("");
+  const [phone, setPhone] = useState("919999999999");
+
+  // Derive the drawer's table from the live store so 3s polling keeps it fresh.
+  const selectedTable: Table | null = tables.find(t => t.id === selectedTableId) ?? null;
+
   useEffect(() => {
     setMounted(true);
     setCurrentTime(Date.now());
@@ -44,7 +55,7 @@ export default function TablesPage() {
   };
 
   const handleTableClick = (table: Table) => {
-    setSelectedTable(table);
+    setSelectedTableId(table.id);
     setWaStatus("idle");
   };
 
@@ -52,28 +63,61 @@ export default function TablesPage() {
     setIsPinModalOpen(true);
   };
 
-  const handleSettleConfirm = () => {
-    if (selectedTable) {
-      settleTable(selectedTable.id);
-      setSelectedTable(null);
-      setIsPinModalOpen(false);
+  const handleSettleConfirm = async () => {
+    if (selectedTableId) {
+      await settleTable(selectedTableId);
     }
+    setSelectedTableId(null);
+    setIsPinModalOpen(false);
   };
 
-  const handleAddDummyOrder = () => {
-    if (selectedTable) {
-      addOrderToTable(selectedTable.id, { id: Date.now().toString(), name: "Masala Dosa", price: 120, qty: 1 });
-      // Update local selected state
-      setSelectedTable(useAppStore.getState().tables.find(t => t.id === selectedTable.id) || null);
+  const handleAddItem = async () => {
+    if (!selectedTable) return;
+    const name = newItemName.trim();
+    if (!name) {
+      toast.add({ type: "error", title: "Item required", description: "Enter an item name before adding." });
+      return;
+    }
+    const ok = await placeOrder(selectedTable.id, {
+      name,
+      price: Number(newItemPrice) || 0,
+      qty: 1,
+    });
+    if (ok) {
+      toast.add({ type: "success", title: "Item added", description: `${name} added to ${selectedTable.name}.` });
+      setNewItemName("");
+      setNewItemPrice("");
+    } else {
+      toast.add({ type: "error", title: "Error", description: "Failed to add item to the order." });
     }
   };
 
   const handleSendWaBill = async () => {
+    if (!selectedTable) return;
+    if (!currentUser?.restaurantId) {
+      toast.add({ type: "error", title: "Error", description: "No restaurant linked to this session." });
+      return;
+    }
     setWaStatus("loading");
-    // Simulate API delay
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/whatsapp/send-bill", {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          restaurant_id: currentUser.restaurantId,
+          table_id: selectedTable.id,
+          phone,
+          bill_total: calculateTotal(selectedTable).toFixed(2),
+          invoice_no: `INV-${Date.now().toString().slice(-6)}`,
+        }),
+      });
+      if (!res.ok) throw new Error("send failed");
       setWaStatus("success");
-    }, 1000);
+      toast.add({ type: "success", title: "Bill sent", description: `Digital bill sent to ${phone}.` });
+    } catch (e) {
+      setWaStatus("idle");
+      toast.add({ type: "error", title: "Error", description: "Failed to send the WhatsApp bill." });
+    }
   };
 
   return (
@@ -93,32 +137,38 @@ export default function TablesPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {tables.map(table => (
-            <Card 
-              key={table.id} 
-              className={`cursor-pointer transition-all hover:scale-[1.02] border-2 ${STATE_COLORS[table.state]} ${selectedTable?.id === table.id ? 'ring-2 ring-primary ring-offset-2' : 'border-transparent'}`}
-              onClick={() => handleTableClick(table)}
-            >
-              <CardContent className="p-6 flex flex-col items-center justify-center min-h-[140px] text-center">
-                <h3 className="text-2xl font-bold">{table.name}</h3>
-                <div className="flex items-center mt-2 text-sm opacity-80">
-                  <Users className="w-4 h-4 mr-1" /> {table.capacity} Pax
-                </div>
-                {table.seatedAt && (
-                  <div className="flex items-center mt-3 text-sm font-medium">
-                    <Clock className="w-4 h-4 mr-1" /> {getElapsedTime(table.seatedAt)}
+        {tables.length === 0 ? (
+          <div className="border-2 border-dashed rounded-base p-10 text-center text-muted-foreground">
+            No tables found for this outlet. Push tables through the live API webhook to see them here.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {tables.map(table => (
+              <Card
+                key={table.id}
+                className={`cursor-pointer transition-all hover:scale-[1.02] border-2 ${STATE_COLORS[table.state]} ${selectedTableId === table.id ? 'ring-2 ring-primary ring-offset-2' : 'border-transparent'}`}
+                onClick={() => handleTableClick(table)}
+              >
+                <CardContent className="p-6 flex flex-col items-center justify-center min-h-[140px] text-center">
+                  <h3 className="text-2xl font-bold">{table.name}</h3>
+                  <div className="flex items-center mt-2 text-sm opacity-80">
+                    <Users className="w-4 h-4 mr-1" /> {table.capacity} Pax
                   </div>
-                )}
-                {table.orders.length > 0 && (
-                  <div className="mt-2 text-sm font-bold">
-                    ₹{calculateTotal(table).toFixed(0)}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  {table.seatedAt && (
+                    <div className="flex items-center mt-3 text-sm font-medium">
+                      <Clock className="w-4 h-4 mr-1" /> {getElapsedTime(table.seatedAt)}
+                    </div>
+                  )}
+                  {table.orders.length > 0 && (
+                    <div className="mt-2 text-sm font-bold">
+                      ₹{calculateTotal(table).toFixed(0)}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Interactive Table Details Drawer */}
@@ -133,7 +183,7 @@ export default function TablesPage() {
                   {selectedTable.waiter && <span className="ml-3 border-l pl-3">Waiter: {selectedTable.waiter}</span>}
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setSelectedTable(null)}>
+              <Button variant="ghost" size="icon" onClick={() => setSelectedTableId(null)}>
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -141,15 +191,15 @@ export default function TablesPage() {
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* State Controls */}
               <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  variant={selectedTable.state === 'available' ? 'default' : 'outline'} 
-                  onClick={() => { updateTableState(selectedTable.id, 'available'); setSelectedTable({...selectedTable, state: 'available', orders: []}); }}
+                <Button
+                  variant={selectedTable.state === 'available' ? 'default' : 'outline'}
+                  onClick={() => updateTableState(selectedTable.id, 'available')}
                 >
                   Clear Table
                 </Button>
-                <Button 
+                <Button
                   variant={selectedTable.state === 'seated' ? 'default' : 'outline'}
-                  onClick={() => { updateTableState(selectedTable.id, 'seated'); setSelectedTable({...selectedTable, state: 'seated'}); }}
+                  onClick={() => updateTableState(selectedTable.id, 'seated')}
                 >
                   Mark Seated
                 </Button>
@@ -162,9 +212,8 @@ export default function TablesPage() {
                     <h3 className="font-semibold flex items-center">
                       <Coffee className="w-4 h-4 mr-2" /> KOT Orders
                     </h3>
-                    <Button variant="ghost" size="sm" onClick={handleAddDummyOrder}>+ Add Item</Button>
                   </div>
-                  
+
                   {selectedTable.orders.length === 0 ? (
                     <div className="text-center p-6 border rounded-lg border-dashed text-muted-foreground text-sm">
                       No items ordered yet.
@@ -196,6 +245,29 @@ export default function TablesPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Add item (persisted to the backend) */}
+                  <div className="border-2 border-dashed rounded-base p-3 space-y-2">
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Add KOT Item</p>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Item name"
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="₹"
+                        value={newItemPrice}
+                        onChange={(e) => setNewItemPrice(e.target.value)}
+                        className="w-20"
+                      />
+                    </div>
+                    <Button className="w-full" size="sm" onClick={handleAddItem}>
+                      + Add Item
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -204,28 +276,34 @@ export default function TablesPage() {
             {selectedTable.state !== 'available' && (
               <div className="p-6 border-t bg-muted/30 space-y-3">
                 {selectedTable.orders.length > 0 && (
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-between" 
-                    onClick={handleSendWaBill}
-                    disabled={waStatus === 'loading' || waStatus === 'success'}
-                  >
-                    <span className="flex items-center">
-                      {waStatus === 'success' ? <Check className="w-4 h-4 mr-2 text-green-600" /> : <Send className="w-4 h-4 mr-2" />}
-                      {waStatus === 'success' ? 'Bill Sent via WhatsApp' : 'Send Digital Bill (WhatsApp)'}
-                    </span>
-                    {waStatus !== 'success' && <Badge variant="secondary">API</Badge>}
-                  </Button>
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Customer phone"
+                        className="flex-1"
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                      onClick={handleSendWaBill}
+                      disabled={waStatus === 'loading' || waStatus === 'success'}
+                    >
+                      <span className="flex items-center">
+                        {waStatus === 'success' ? <Check className="w-4 h-4 mr-2 text-green-600" /> : <Send className="w-4 h-4 mr-2" />}
+                        {waStatus === 'success' ? 'Bill Sent via WhatsApp' : 'Send Digital Bill (WhatsApp)'}
+                      </span>
+                      {waStatus !== 'success' && <Badge variant="secondary">API</Badge>}
+                    </Button>
+                  </>
                 )}
-                
-                <Button 
-                  className="w-full bg-green-600 hover:bg-green-700 text-white" 
+
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
                   size="lg"
-                  onClick={() => {
-                    updateTableState(selectedTable.id, 'billed');
-                    setSelectedTable({...selectedTable, state: 'billed'});
-                    handleSettleClick();
-                  }}
+                  onClick={() => updateTableState(selectedTable.id, 'billed').then(handleSettleClick)}
                   disabled={selectedTable.orders.length === 0}
                 >
                   <Receipt className="w-5 h-5 mr-2" />
@@ -237,9 +315,9 @@ export default function TablesPage() {
         )}
       </div>
 
-      <ManagerPinModal 
-        isOpen={isPinModalOpen} 
-        onClose={() => setIsPinModalOpen(false)} 
+      <ManagerPinModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
         onSuccess={handleSettleConfirm}
         actionName="Settle Bill & Reset Table"
       />

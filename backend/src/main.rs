@@ -4,7 +4,7 @@ use axum::{
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
-    routing::{get, post},
+    routing::{get, post, put},
     Json, Router,
 };
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -362,6 +362,7 @@ async fn main() {
             name TEXT NOT NULL,
             price REAL NOT NULL,
             qty INTEGER NOT NULL,
+            created_at INTEGER,
             FOREIGN KEY(table_id) REFERENCES tables(id)
         );",
         "CREATE TABLE IF NOT EXISTS delivery_fleet (
@@ -439,6 +440,7 @@ async fn main() {
         "ALTER TABLE users ADD COLUMN dish_specialty TEXT",
         "ALTER TABLE users ADD COLUMN weekly_schedule TEXT",
         "ALTER TABLE users ADD COLUMN leave_status TEXT",
+        "ALTER TABLE orders ADD COLUMN created_at INTEGER",
     ];
     for alter in alters {
         let _ = sqlx::query(alter).execute(&pool).await;
@@ -481,6 +483,9 @@ async fn main() {
         .route("/api/delivery/tracking", get(get_delivery_tracking))
         // Webhooks and Live API data
         .route("/api/tables", get(get_tables))
+        .route("/api/tables/{id}", put(update_table))
+        .route("/api/orders", post(create_order))
+        .route("/api/orders/{id}", axum::routing::delete(delete_order))
         .route("/api/analytics", get(get_analytics))
         .route("/api/webhooks/tables", post(webhook_tables))
         .route("/api/webhooks/orders", post(webhook_orders))
@@ -573,6 +578,32 @@ async fn register(
     .bind(&now)
     .execute(&state.db)
     .await;
+
+    // Give every new outlet a starter floor plan so the Tables & KDS screens are
+    // immediately usable instead of starting completely empty.
+    let floor_plan: [(&str, i64); 8] = [
+        ("T-01", 2),
+        ("T-02", 2),
+        ("T-03", 4),
+        ("T-04", 4),
+        ("T-05", 6),
+        ("T-06", 6),
+        ("T-07", 8),
+        ("T-08", 2),
+    ];
+    for (index, (table_name, capacity)) in floor_plan.iter().enumerate() {
+        let table_id = format!("{}_t{}", restaurant_id, index + 1);
+        let _ = sqlx::query(
+            "INSERT OR IGNORE INTO tables (id, restaurant_id, name, capacity, state, waiter, seated_at)
+             VALUES (?, ?, ?, ?, 'available', NULL, NULL)",
+        )
+        .bind(&table_id)
+        .bind(&restaurant_id)
+        .bind(table_name)
+        .bind(capacity)
+        .execute(&state.db)
+        .await;
+    }
 
     let result = sqlx::query(
         "INSERT INTO users (id, email, password_hash, name, role_id, team_id, restaurant_id, avatar_url, status, must_change_password, created_at)
@@ -1580,6 +1611,7 @@ async fn get_delivery_tracking(
 // ---------------------------------------------------------------- Webhooks (Live API Ingestion)
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct TableItem {
     id: String,
     name: String,
@@ -1591,11 +1623,13 @@ struct TableItem {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct OrderItem {
     id: String,
     name: String,
     price: f64,
     qty: i64,
+    created_at: Option<i64>,
 }
 
 async fn get_tables(
@@ -1617,8 +1651,8 @@ async fn get_tables(
 
     let mut tables = Vec::new();
     for (id, name, capacity, state_val, waiter, seated_at) in table_rows {
-        let order_rows: Vec<(String, String, f64, i64)> = sqlx::query_as(
-            "SELECT id, name, price, qty FROM orders WHERE table_id = ?"
+        let order_rows: Vec<(String, String, f64, i64, Option<i64>)> = sqlx::query_as(
+            "SELECT id, name, price, qty, created_at FROM orders WHERE table_id = ?"
         )
         .bind(&id)
         .fetch_all(&state.db)
@@ -1626,8 +1660,8 @@ async fn get_tables(
         .unwrap_or_default();
 
         let mut orders = Vec::new();
-        for (oid, oname, price, qty) in order_rows {
-            orders.push(OrderItem { id: oid, name: oname, price, qty });
+        for (oid, oname, price, qty, created_at) in order_rows {
+            orders.push(OrderItem { id: oid, name: oname, price, qty, created_at });
         }
 
         tables.push(TableItem {
@@ -1658,13 +1692,22 @@ async fn webhook_tables(
     State(state): State<AppState>,
     Json(payload): Json<WebhookTableRequest>,
 ) -> impl IntoResponse {
-    let now = Utc::now().timestamp();
-    let seated_at = if payload.state == "seated" { Some(now) } else { None };
+    // Stored in milliseconds so the UI can compute elapsed seating time directly.
+    let now = Utc::now().timestamp_millis();
+    let seated_at = if payload.state == "available" { None } else { Some(now) };
 
     let _ = sqlx::query(
         "INSERT INTO tables (id, restaurant_id, name, capacity, state, waiter, seated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(id) DO UPDATE SET state=excluded.state, waiter=excluded.waiter, seated_at=excluded.seated_at, capacity=excluded.capacity, name=excluded.name"
+         ON CONFLICT(id) DO UPDATE SET
+            state=excluded.state,
+            waiter=excluded.waiter,
+            capacity=excluded.capacity,
+            name=excluded.name,
+            seated_at = CASE
+                WHEN excluded.state = 'available' THEN NULL
+                ELSE COALESCE(tables.seated_at, excluded.seated_at)
+            END"
     )
     .bind(&payload.id)
     .bind(&payload.restaurant_id)
@@ -1686,15 +1729,17 @@ struct WebhookOrderRequest {
     name: String,
     price: f64,
     qty: i64,
+    created_at: Option<i64>,
 }
 
 async fn webhook_orders(
     State(state): State<AppState>,
     Json(payload): Json<WebhookOrderRequest>,
 ) -> impl IntoResponse {
+    let created_at = payload.created_at.unwrap_or_else(|| Utc::now().timestamp_millis());
     let _ = sqlx::query(
-        "INSERT INTO orders (id, table_id, name, price, qty)
-         VALUES (?, ?, ?, ?, ?)
+        "INSERT INTO orders (id, table_id, name, price, qty, created_at)
+         VALUES (?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET qty=excluded.qty"
     )
     .bind(&payload.id)
@@ -1702,6 +1747,7 @@ async fn webhook_orders(
     .bind(&payload.name)
     .bind(&payload.price)
     .bind(&payload.qty)
+    .bind(created_at)
     .execute(&state.db)
     .await;
 
@@ -1712,6 +1758,216 @@ async fn webhook_orders(
         .await;
 
     (StatusCode::OK, Json(json!({ "ok": true }))).into_response()
+}
+
+/// Persists floor-plan changes (seating, billing, clearing) made in the Tables
+/// screen so the 3-second live poll cannot revert them.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct UpdateTableRequest {
+    state: Option<String>,
+    waiter: Option<String>,
+    clear_orders: Option<bool>,
+}
+
+async fn update_table(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+    Json(payload): Json<UpdateTableRequest>,
+) -> impl IntoResponse {
+    let claims = match claims_from(&headers) {
+        Some(claims) => claims,
+        None => return unauthorized(),
+    };
+
+    let owns_table: Option<String> =
+        sqlx::query_scalar("SELECT id FROM tables WHERE id = ? AND restaurant_id = ?")
+            .bind(&id)
+            .bind(&claims.restaurant_id)
+            .fetch_optional(&state.db)
+            .await
+            .ok()
+            .flatten();
+    if owns_table.is_none() {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "error": "Table not found" })),
+        )
+            .into_response();
+    }
+
+    if payload.clear_orders == Some(true) {
+        let _ = sqlx::query("DELETE FROM orders WHERE table_id = ?")
+            .bind(&id)
+            .execute(&state.db)
+            .await;
+    }
+
+    if let Some(new_state) = payload.state.as_deref() {
+        match new_state {
+            "available" => {
+                let _ = sqlx::query(
+                    "UPDATE tables SET state = 'available', seated_at = NULL, waiter = NULL WHERE id = ?",
+                )
+                .bind(&id)
+                .execute(&state.db)
+                .await;
+            }
+            "seated" => {
+                let now = Utc::now().timestamp_millis();
+                let _ = sqlx::query(
+                    "UPDATE tables SET state = 'seated', seated_at = COALESCE(seated_at, ?), waiter = COALESCE(?, waiter) WHERE id = ?",
+                )
+                .bind(now)
+                .bind(&payload.waiter)
+                .bind(&id)
+                .execute(&state.db)
+                .await;
+            }
+            other => {
+                let _ = sqlx::query("UPDATE tables SET state = ? WHERE id = ?")
+                    .bind(other)
+                    .bind(&id)
+                    .execute(&state.db)
+                    .await;
+            }
+        }
+    } else if let Some(waiter) = payload.waiter.as_deref() {
+        let _ = sqlx::query("UPDATE tables SET waiter = ? WHERE id = ?")
+            .bind(waiter)
+            .bind(&id)
+            .execute(&state.db)
+            .await;
+    }
+
+    (StatusCode::OK, Json(json!({ "ok": true }))).into_response()
+}
+
+/// Authenticated order creation used by the Tables & KDS screens. Scopes the
+/// write to a table that belongs to the caller's restaurant.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateOrderRequest {
+    table_id: String,
+    name: String,
+    price: f64,
+    qty: i64,
+}
+
+async fn create_order(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(payload): Json<CreateOrderRequest>,
+) -> impl IntoResponse {
+    let claims = match claims_from(&headers) {
+        Some(claims) => claims,
+        None => return unauthorized(),
+    };
+
+    let owns_table: Option<String> =
+        sqlx::query_scalar("SELECT id FROM tables WHERE id = ? AND restaurant_id = ?")
+            .bind(&payload.table_id)
+            .bind(&claims.restaurant_id)
+            .fetch_optional(&state.db)
+            .await
+            .ok()
+            .flatten();
+    if owns_table.is_none() {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "error": "Table not found" })),
+        )
+            .into_response();
+    }
+
+    if payload.name.trim().is_empty() || payload.qty <= 0 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "An item name and a positive quantity are required" })),
+        )
+            .into_response();
+    }
+
+    let id = format!("order_{}", Uuid::new_v4().simple());
+    let now = Utc::now().timestamp_millis();
+    let _ = sqlx::query(
+        "INSERT INTO orders (id, table_id, name, price, qty, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+    )
+    .bind(&id)
+    .bind(&payload.table_id)
+    .bind(payload.name.trim())
+    .bind(payload.price)
+    .bind(payload.qty)
+    .bind(now)
+    .execute(&state.db)
+    .await;
+
+    let _ = sqlx::query("UPDATE tables SET state = 'ordered' WHERE id = ?")
+        .bind(&payload.table_id)
+        .execute(&state.db)
+        .await;
+
+    (
+        StatusCode::CREATED,
+        Json(json!({ "ok": true, "id": id, "createdAt": now })),
+    )
+        .into_response()
+}
+
+/// Removes a KOT line item (used by the KDS "bump" action). When the table has
+/// no remaining items it drops back to the `seated` state.
+async fn delete_order(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    let claims = match claims_from(&headers) {
+        Some(claims) => claims,
+        None => return unauthorized(),
+    };
+
+    let table_id: Option<String> = sqlx::query_scalar(
+        "SELECT o.table_id FROM orders o
+         JOIN tables t ON t.id = o.table_id
+         WHERE o.id = ? AND t.restaurant_id = ?",
+    )
+    .bind(&id)
+    .bind(&claims.restaurant_id)
+    .fetch_optional(&state.db)
+    .await
+    .ok()
+    .flatten();
+
+    let table_id = match table_id {
+        Some(table_id) => table_id,
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({ "error": "Order not found" })),
+            )
+                .into_response()
+        }
+    };
+
+    let _ = sqlx::query("DELETE FROM orders WHERE id = ?")
+        .bind(&id)
+        .execute(&state.db)
+        .await;
+
+    let remaining: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM orders WHERE table_id = ?")
+        .bind(&table_id)
+        .fetch_one(&state.db)
+        .await
+        .unwrap_or(0);
+    if remaining == 0 {
+        let _ = sqlx::query("UPDATE tables SET state = 'seated' WHERE id = ?")
+            .bind(&table_id)
+            .execute(&state.db)
+            .await;
+    }
+
+    StatusCode::NO_CONTENT.into_response()
 }
 
 #[derive(Deserialize)]

@@ -25,7 +25,7 @@ interface InventoryItem {
 export default function InventoryExpiryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const { currentUser } = useAppStore();
-  const isManager = roleLevelOf(currentUser) <= 2;
+  const isManager = (roleLevelOf(currentUser) ?? 99) <= 2;
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("Produce");
@@ -116,7 +116,7 @@ export default function InventoryExpiryPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Category</label>
-                <Select value={category} onValueChange={setCategory}>
+                <Select value={category} onValueChange={(value) => setCategory(value ?? "")}>
                   <SelectTrigger className="bg-white">
                     <SelectValue />
                   </SelectTrigger>
@@ -131,7 +131,7 @@ export default function InventoryExpiryPage() {
                 <label className="text-sm font-semibold">Quantity</label>
                 <div className="flex gap-2">
                   <Input type="number" min="0.1" step="0.1" value={quantity} onChange={e => setQuantity(e.target.value)} />
-                  <Select value={unit} onValueChange={setUnit}>
+                  <Select value={unit} onValueChange={(value) => setUnit(value ?? "")}>
                     <SelectTrigger className="bg-white w-24">
                       <SelectValue />
                     </SelectTrigger>

@@ -1,7 +1,7 @@
 /* eslint-disable */
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
 import L from "leaflet";
 
@@ -59,9 +59,15 @@ export default function DeliveryMap() {
 
   useEffect(() => {
     const fetchData = () => {
-      fetch("http://127.0.0.1:8000/api/delivery/tracking")
-        .then(res => res.json())
-        .then(json => setData(json))
+      fetch("/api/delivery-tracking")
+        // The proxy answers with { error } (502) when the Rust backend is down,
+        // so only accept a well-formed fleet payload.
+        .then(res => (res.ok ? res.json() : Promise.reject(new Error(`status ${res.status}`))))
+        .then(json => {
+          if (json && Array.isArray(json.restaurant) && Array.isArray(json.deliveries)) {
+            setData(json);
+          }
+        })
         .catch(err => console.error("Failed to fetch map tracking data", err));
     };
     
@@ -70,7 +76,7 @@ export default function DeliveryMap() {
     return () => clearInterval(intervalId);
   }, []);
 
-  if (!data) {
+  if (!data || !Array.isArray(data.deliveries)) {
     return <div className="h-full w-full flex items-center justify-center bg-muted/20 animate-pulse">Loading Live Fleet Map...</div>;
   }
 
@@ -94,7 +100,7 @@ export default function DeliveryMap() {
         {data.deliveries.map((delivery, idx) => {
           const color = routeColors[idx % routeColors.length];
           return (
-            <div key={delivery.id}>
+            <Fragment key={delivery.id}>
               {/* Individual Route Polyline */}
               <Polyline 
                 positions={delivery.route} 
@@ -116,7 +122,7 @@ export default function DeliveryMap() {
                   <span style={{ color }} className="font-normal">On the way</span>
                 </Popup>
               </Marker>
-            </div>
+            </Fragment>
           );
         })}
       </MapContainer>

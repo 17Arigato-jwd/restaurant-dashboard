@@ -28,6 +28,8 @@ export interface OrderItem {
   name: string;
   price: number;
   qty: number;
+  /** Epoch milliseconds (server-set) used for KOT prep timers. */
+  createdAt?: number;
 }
 
 export interface Table {
@@ -80,9 +82,10 @@ interface AppState {
 
   // Tables & Operations (Phase 2)
   tables: Table[];
-  updateTableState: (id: string, newState: TableState) => void;
-  addOrderToTable: (id: string, order: OrderItem) => void;
-  settleTable: (id: string) => void;
+  updateTableState: (id: string, newState: TableState) => Promise<void>;
+  placeOrder: (tableId: string, order: { name: string; price: number; qty: number }) => Promise<boolean>;
+  bumpOrder: (orderId: string) => Promise<void>;
+  settleTable: (id: string) => Promise<void>;
   fetchLiveTables: () => Promise<void>;
 }
 
@@ -154,42 +157,83 @@ export const useAppStore = create<AppState>()(
         const { token } = get();
         if (!token) return;
         try {
-          const res = await fetch('http://127.0.0.1:8000/api/tables', {
+          const res = await fetch('/api/tables', {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (res.ok) {
             const data = await res.json();
-            set({ tables: data });
+            if (Array.isArray(data)) set({ tables: data });
           }
         } catch (e) { console.error("Failed to fetch live tables:", e); }
       },
-      updateTableState: (id, newState) => set((state) => ({
-        tables: state.tables.map(t => {
-          if (t.id === id) {
+      updateTableState: async (id, newState) => {
+        // Optimistic local update so the floor plan responds instantly...
+        set((state) => ({
+          tables: state.tables.map(t => {
+            if (t.id !== id) return t;
             return {
               ...t,
               state: newState,
-              seatedAt: (newState === 'seated' && t.state === 'available') ? Date.now() : t.seatedAt
+              seatedAt: newState === 'seated' && !t.seatedAt ? Date.now()
+                : newState === 'available' ? undefined
+                : t.seatedAt,
             };
+          })
+        }));
+        // ...then persist so the 3-second live poll does not revert it.
+        const { token } = get();
+        if (!token) return;
+        try {
+          await fetch(`/api/tables/${id}`, {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ state: newState }),
+          });
+          await get().fetchLiveTables();
+        } catch (e) { console.error("Failed to update table state:", e); }
+      },
+      placeOrder: async (tableId, order) => {
+        const { token } = get();
+        if (!token) return false;
+        try {
+          const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tableId, name: order.name, price: order.price, qty: order.qty }),
+          });
+          if (res.ok) {
+            await get().fetchLiveTables();
+            return true;
           }
-          return t;
-        })
-      })),
-      addOrderToTable: (id, order) => set((state) => ({
-        tables: state.tables.map(t => {
-          if (t.id === id) {
-            const existingOrder = t.orders.find(o => o.id === order.id);
-            const newOrders = existingOrder 
-              ? t.orders.map(o => o.id === order.id ? { ...o, qty: o.qty + order.qty } : o)
-              : [...t.orders, order];
-            return { ...t, state: 'ordered', orders: newOrders };
-          }
-          return t;
-        })
-      })),
-      settleTable: (id) => set((state) => ({
-        tables: state.tables.map(t => t.id === id ? { ...t, state: 'available', orders: [], seatedAt: undefined, waiter: undefined } : t)
-      }))
+        } catch (e) { console.error("Failed to place order:", e); }
+        return false;
+      },
+      bumpOrder: async (orderId) => {
+        const { token } = get();
+        if (!token) return;
+        try {
+          await fetch(`/api/orders/${orderId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          await get().fetchLiveTables();
+        } catch (e) { console.error("Failed to bump order:", e); }
+      },
+      settleTable: async (id) => {
+        set((state) => ({
+          tables: state.tables.map(t => t.id === id ? { ...t, state: 'available', orders: [], seatedAt: undefined, waiter: undefined } : t)
+        }));
+        const { token } = get();
+        if (!token) return;
+        try {
+          await fetch(`/api/tables/${id}`, {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ state: 'available', clearOrders: true }),
+          });
+          await get().fetchLiveTables();
+        } catch (e) { console.error("Failed to settle table:", e); }
+      }
     }),
     {
       name: 'restaurant-storage',

@@ -1,7 +1,7 @@
 /* eslint-disable */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppStore } from "@/store/useAppStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,14 +9,53 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Truck, Store, TrendingUp, Calculator, Wifi, WifiOff, Map as MapIcon } from "lucide-react";
 import dynamic from "next/dynamic";
+import { toast } from "@/components/ui/toast";
 
 const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), {
   ssr: false,
   loading: () => <div className="h-[400px] w-full flex items-center justify-center bg-muted/20 animate-pulse border rounded-lg">Loading Live Map...</div>
 });
 
+interface LiveDelivery {
+  id: string;
+  customer: [number, number];
+  driver: [number, number];
+  route: [number, number][];
+}
+
 export default function DeliveryManagerPage() {
-  const { channels, setChannelStatus } = useAppStore();
+  const { channels, setChannelStatus, tables, placeOrder } = useAppStore();
+
+  // Live deliveries streamed from the fleet tracking API.
+  const [deliveries, setDeliveries] = useState<LiveDelivery[]>([]);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/delivery-tracking');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data?.deliveries)) setDeliveries(data.deliveries);
+        }
+      } catch { /* backend offline */ }
+    };
+    load();
+    const id = setInterval(load, 4000);
+    return () => clearInterval(id);
+  }, []);
+
+  const handleInjectOrder = async () => {
+    const table = tables[0];
+    if (!table) {
+      toast.add({ type: "error", title: "No table available", description: "Add a table before injecting an order." });
+      return;
+    }
+    const ok = await placeOrder(table.id, { name: `${table.name} Online Combo`, price: 250, qty: 1 });
+    if (ok) {
+      toast.add({ type: "success", title: "Order injected", description: `Pushed a test order to ${table.name} (KDS + POS).` });
+    } else {
+      toast.add({ type: "error", title: "Injection failed", description: "Could not push the test order." });
+    }
+  };
   
   // Local state for auto-accept
   const [autoAccept, setAutoAccept] = useState({
@@ -45,7 +84,7 @@ export default function DeliveryManagerPage() {
   const monthlySavings = currentFees - projectedFees;
   const annualSavings = monthlySavings * 12;
 
-  const PlatformCard = ({ name, color, isActive, auto, onToggleStatus, onToggleAuto, rev }: any) => (
+  const PlatformCard = ({ name, color, isActive, auto, onToggleStatus, onToggleAuto }: any) => (
     <Card className={`border-2 transition-all ${isActive ? `border-${color}-500/50` : 'border-muted opacity-80'}`}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
@@ -58,8 +97,8 @@ export default function DeliveryManagerPage() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center text-sm">
-          <span className="text-muted-foreground">Today's Revenue</span>
-          <span className="font-bold">₹{rev.toLocaleString()}</span>
+          <span className="text-muted-foreground">API Connection</span>
+          <span className={`font-bold ${isActive ? 'text-green-600' : 'text-red-500'}`}>{isActive ? 'Connected' : 'Offline'}</span>
         </div>
         <div className="flex justify-between items-center text-sm pt-2 border-t">
           <span className="text-muted-foreground">Auto-Accept to POS</span>
@@ -82,21 +121,18 @@ export default function DeliveryManagerPage() {
           isActive={channels.swiggy} auto={autoAccept.swiggy}
           onToggleStatus={(s: boolean) => setChannelStatus('swiggy', s)}
           onToggleAuto={() => toggleAutoAccept('swiggy')}
-          rev={42500}
         />
         <PlatformCard 
           name="Zomato API" color="red" 
           isActive={channels.zomato} auto={autoAccept.zomato}
           onToggleStatus={(s: boolean) => setChannelStatus('zomato', s)}
           onToggleAuto={() => toggleAutoAccept('zomato')}
-          rev={38200}
         />
         <PlatformCard 
           name="ONDC API" color="blue" 
           isActive={channels.ondc} auto={autoAccept.ondc}
           onToggleStatus={(s: boolean) => setChannelStatus('ondc', s)}
           onToggleAuto={() => toggleAutoAccept('ondc')}
-          rev={4100}
         />
       </div>
 
@@ -192,60 +228,37 @@ export default function DeliveryManagerPage() {
       </Card>
       
       <div>
-        <h2 className="text-2xl font-bold mb-4">Active Deliveries</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Order #1042</CardTitle>
-              <CardDescription>Platform: Zomato</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 font-bold">
-              <p>Client: Rahul Sharma</p>
-              <p>Food: 2x Butter Chicken, 4x Garlic Naan</p>
-              <p className="text-main">Status: Driver 2 mins away</p>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">Call Driver</Button>
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Order #1043</CardTitle>
-              <CardDescription>Platform: Swiggy</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 font-bold">
-              <p>Client: Priya Patel</p>
-              <p>Food: 1x Paneer Tikka, 1x Veg Biryani</p>
-              <p className="text-main">Status: Driver at Restaurant</p>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">Mark Picked Up</Button>
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Order #1044</CardTitle>
-              <CardDescription>Platform: ONDC</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 font-bold">
-              <p>Client: Amit Kumar</p>
-              <p>Food: 1x Masala Dosa, 2x Filter Coffee</p>
-              <p className="text-main">Status: Out for Delivery</p>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">Track Live</Button>
-            </CardFooter>
-          </Card>
-        </div>
+        <h2 className="text-2xl font-bold mb-4">Active Deliveries ({deliveries.length})</h2>
+        {deliveries.length === 0 ? (
+          <div className="border-2 border-dashed rounded-base p-8 text-center text-muted-foreground">
+            No live deliveries. Fleet coordinates pushed via the tracking webhook will appear here.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {deliveries.map((delivery, idx) => (
+              <Card key={delivery.id}>
+                <CardHeader>
+                  <CardTitle>Delivery #{idx + 1}</CardTitle>
+                  <CardDescription>Driver ID: {delivery.id}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2 font-bold">
+                  <p className="text-sm font-mono">Driver: {delivery.driver[0].toFixed(4)}, {delivery.driver[1].toFixed(4)}</p>
+                  <p className="text-sm font-mono">Customer: {delivery.customer[0].toFixed(4)}, {delivery.customer[1].toFixed(4)}</p>
+                  <p className="text-main">Status: On the way</p>
+                </CardContent>
+                <CardFooter>
+                  <Button className="w-full" onClick={() => toast.add({ title: "Driver notified", description: `Contacting delivery partner ${delivery.id}.` })}>
+                    Call Driver
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
       
       <div className="flex justify-end pt-4">
-        <Button onClick={() => {
-           // Simulate direct POS injection
-           alert("Test Order Injected directly into KDS & POS from ONDC API!");
-        }}>
+        <Button onClick={handleInjectOrder}>
           Test Direct POS Order Injection (ONDC)
         </Button>
       </div>
