@@ -38,39 +38,38 @@ const RECIPE_GUIDE = [
 export default function InventoryPage() {
   const [inventory, setInventory] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchInventory = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/inventory-items', { headers: authHeaders() });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      const items: ApiInventoryItem[] = await res.json();
+      if (!Array.isArray(items)) throw new Error('Unexpected response from the inventory API');
+      // Real on-hand stock from the API. POS consumption isn't tracked yet, so the
+      // physical count starts equal to stock and the manager overrides it.
+      const ingredients: Ingredient[] = items.map(item => ({
+        id: item.id,
+        name: item.name,
+        startStock: item.quantity,
+        theoreticalSold: 0,
+        actualStock: item.quantity,
+        unit: item.unit,
+        expiryDate: item.expiryDate,
+      }));
+      setInventory(ingredients);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load inventory');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchInventory = async () => {
-      try {
-        const res = await fetch('/api/inventory-items', { headers: authHeaders() });
-        if (res.ok) {
-          const items: ApiInventoryItem[] = await res.json();
-          // Transform API items into the reconciliation model
-          const ingredients: Ingredient[] = items.map(item => {
-            // Simulate POS-consumed as ~60% of quantity for reconciliation
-            const theoreticalSold = +(item.quantity * 0.6).toFixed(2);
-            const theoreticalRemaining = +(item.quantity - theoreticalSold).toFixed(2);
-            // Small random variance to simulate physical count
-            const variance = +(Math.random() * 0.5).toFixed(2);
-            return {
-              id: item.id,
-              name: item.name,
-              startStock: item.quantity,
-              theoreticalSold,
-              actualStock: +(theoreticalRemaining - variance).toFixed(2),
-              unit: item.unit,
-              expiryDate: item.expiryDate,
-            };
-          });
-          setInventory(ingredients);
-        }
-      } catch (err) {
-        console.error("Failed to fetch inventory:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchInventory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleActualStockChange = (id: string, value: string) => {
@@ -112,6 +111,22 @@ export default function InventoryPage() {
         <h1 className="text-3xl font-bold tracking-tight">Stock & Waste Tracker</h1>
         <p className="text-muted-foreground mt-1">Reconcile theoretical POS consumption against physical inventory counts.</p>
       </div>
+
+      {error && (
+        <Card className="border-red-500 bg-red-50 dark:bg-red-950/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-red-700 dark:text-red-400 flex items-center">
+              <AlertTriangle className="w-5 h-5 mr-2" /> Could not load inventory
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between gap-4">
+            <p className="text-sm text-red-800 dark:text-red-300">
+              {error}. Make sure the backend is running: <code>cd backend &amp;&amp; cargo run</code>
+            </p>
+            <Button variant="outline" onClick={fetchInventory}>Retry</Button>
+          </CardContent>
+        </Card>
+      )}
 
       {criticalItems.length > 0 && (
         <Card className="border-red-500 bg-red-50 dark:bg-red-950/20">
@@ -157,7 +172,7 @@ export default function InventoryPage() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-full text-muted-foreground italic">
-                  No inventory data. Add items via the Inventory Expiry Tracker.
+                  {error ? "Inventory could not be loaded." : "No inventory data. Add items via the Inventory Expiry Tracker."}
                 </div>
               )}
             </div>
@@ -211,7 +226,7 @@ export default function InventoryPage() {
                 {data.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground italic">
-                      No inventory items found. Add stock via the Inventory Expiry Tracker.
+                      {error ? "Inventory could not be loaded." : "No inventory items found. Add stock via the Inventory Expiry Tracker."}
                     </td>
                   </tr>
                 ) : data.map(item => (

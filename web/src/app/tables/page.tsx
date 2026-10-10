@@ -43,9 +43,12 @@ export default function TablesPage() {
   }, []);
 
   const getElapsedTime = (timestamp?: number) => {
-    if (!timestamp || !mounted) return "";
-    const mins = Math.floor((currentTime - timestamp) / 60000);
-    return `${mins}m`;
+    if (!timestamp || !mounted) return "—";
+    // Defensive: legacy rows may store epoch seconds rather than milliseconds.
+    const ms = timestamp < 100_000_000_000 ? timestamp * 1000 : timestamp;
+    const mins = Math.max(0, Math.floor((currentTime - ms) / 60000));
+    if (mins < 60) return `${mins}m`;
+    return `${Math.floor(mins / 60)}h ${mins % 60}m`;
   };
 
   const calculateTotal = (table: Table) => {
@@ -149,21 +152,19 @@ export default function TablesPage() {
                 className={`cursor-pointer transition-all hover:scale-[1.02] border-2 ${STATE_COLORS[table.state]} ${selectedTableId === table.id ? 'ring-2 ring-primary ring-offset-2' : 'border-transparent'}`}
                 onClick={() => handleTableClick(table)}
               >
-                <CardContent className="p-6 flex flex-col items-center justify-center min-h-[140px] text-center">
+                <CardContent className="p-4 flex flex-col items-center justify-center min-h-[150px] text-center gap-1">
                   <h3 className="text-2xl font-bold">{table.name}</h3>
-                  <div className="flex items-center mt-2 text-sm opacity-80">
+                  {/* Occupancy, time and amount are always shown so every table
+                      reads in the same format. */}
+                  <div className="flex items-center text-sm opacity-80">
                     <Users className="w-4 h-4 mr-1" /> {table.capacity} Pax
                   </div>
-                  {table.seatedAt && (
-                    <div className="flex items-center mt-3 text-sm font-medium">
-                      <Clock className="w-4 h-4 mr-1" /> {getElapsedTime(table.seatedAt)}
-                    </div>
-                  )}
-                  {table.orders.length > 0 && (
-                    <div className="mt-2 text-sm font-bold">
-                      ₹{calculateTotal(table).toFixed(0)}
-                    </div>
-                  )}
+                  <div className="flex items-center text-sm font-medium">
+                    <Clock className="w-4 h-4 mr-1" /> {table.seatedAt ? getElapsedTime(table.seatedAt) : "—"}
+                  </div>
+                  <div className="text-sm font-bold">
+                    ₹{calculateTotal(table).toFixed(0)}
+                  </div>
                 </CardContent>
               </Card>
             ))}

@@ -24,6 +24,8 @@ interface InventoryItem {
 
 export default function InventoryExpiryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { currentUser } = useAppStore();
   const isManager = (roleLevelOf(currentUser) ?? 99) <= 2;
 
@@ -37,9 +39,17 @@ export default function InventoryExpiryPage() {
   const units = ["kg", "g", "L", "ml", "pcs", "boxes"];
 
   const fetchItems = async () => {
-    const res = await fetch('/api/inventory-items', { headers: authHeaders() });
-    if (res.ok) {
-      setItems(await res.json());
+    try {
+      setError(null);
+      const res = await fetch('/api/inventory-items', { headers: authHeaders() });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error('Unexpected response from the inventory API');
+      setItems(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load inventory');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -155,6 +165,18 @@ export default function InventoryExpiryPage() {
         </Card>
       )}
 
+      {error && (
+        <div className="flex items-center justify-between gap-4 border-2 border-red-500 bg-red-50 rounded-base p-4">
+          <div className="flex items-center gap-2 text-red-800">
+            <AlertTriangle className="w-5 h-5 shrink-0" />
+            <span className="text-sm font-semibold">
+              Could not load inventory ({error}). Make sure the backend is running: <code>cd backend &amp;&amp; cargo run</code>
+            </span>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchItems}>Retry</Button>
+        </div>
+      )}
+
       <div className="bg-white border-2 border-black rounded-base shadow-[4px_4px_0px_rgba(0,0,0,1)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -169,10 +191,14 @@ export default function InventoryExpiryPage() {
               </tr>
             </thead>
             <tbody>
-              {items.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-muted-foreground italic">Loading inventory…</td>
+                </tr>
+              ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-muted-foreground italic">
-                    No inventory items found. Add some stock to track expiry.
+                    {error ? "Inventory could not be loaded." : "No inventory items found. Add some stock to track expiry."}
                   </td>
                 </tr>
               ) : items.map((item, index) => {

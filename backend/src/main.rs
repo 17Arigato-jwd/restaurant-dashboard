@@ -446,6 +446,22 @@ async fn main() {
         let _ = sqlx::query(alter).execute(&pool).await;
     }
 
+    // Data fix: seating timestamps used to be stored as epoch SECONDS, which the
+    // UI read as milliseconds and rendered as absurd elapsed times. Normalise any
+    // legacy value to milliseconds (idempotent: ms values are far above the cutoff).
+    let _ = sqlx::query(
+        "UPDATE tables SET seated_at = seated_at * 1000
+         WHERE seated_at IS NOT NULL AND seated_at < 100000000000",
+    )
+    .execute(&pool)
+    .await;
+    let _ = sqlx::query(
+        "UPDATE orders SET created_at = created_at * 1000
+         WHERE created_at IS NOT NULL AND created_at < 100000000000",
+    )
+    .execute(&pool)
+    .await;
+
     let state = AppState { db: pool };
     let cors = CorsLayer::permissive();
 

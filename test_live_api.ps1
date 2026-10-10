@@ -35,7 +35,14 @@ catch {
 # 2. Resolve the restaurant id (from a login when credentials are supplied).
 if (-not $RestaurantId) {
     if (-not ($Email -and $Password)) {
-        Write-Host "Provide -RestaurantId, or -Email and -Password so it can be looked up." -ForegroundColor Red
+        Write-Host "No target restaurant given. Pass -Email and -Password, or -RestaurantId." -ForegroundColor Red
+        Write-Host ""
+        Write-Host "Examples:" -ForegroundColor Yellow
+        Write-Host "  ./test_live_api.ps1 -Email you@example.com -Password yourpassword"
+        Write-Host "  ./test_live_api.ps1 -RestaurantId res_xxxxxxxx"
+        Write-Host ""
+        Write-Host "Note: registering in the web app already seeds tables T-01..T-08." -ForegroundColor DarkGray
+        Write-Host "This script only adds extra demo data (fleet drivers + analytics)." -ForegroundColor DarkGray
         exit 1
     }
     $login = Invoke-RestMethod -Uri "$BaseUrl/api/auth/login" -Method Post -TimeoutSec 10 `
