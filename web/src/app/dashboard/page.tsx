@@ -89,10 +89,11 @@ function buildLive(rng: () => number, filter: "today" | "yesterday"): LiveData {
 
   const channels = ["Dine-In", "Swiggy", "Zomato", "ONDC"];
   const destinations = ["T-02", "T-04", "Rider Waiting", "Prep", "T-07"];
+  const startId = 140 + Math.floor(rng() * 100);
   const orders: LiveOrder[] = Array.from({ length: 4 + Math.round(rng() * 4) }, (_, index) => {
     const elapsed = Math.round(rng() * 26);
     return {
-      id: `KOT-${140 + index + Math.round(rng() * 8)}`,
+      id: `KOT-${startId + index}`,
       channel: channels[Math.floor(rng() * channels.length)],
       table: destinations[Math.floor(rng() * destinations.length)],
       items: 1 + Math.round(rng() * 7),
