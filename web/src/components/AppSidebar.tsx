@@ -54,19 +54,8 @@ const items = [
 
 export function AppSidebar() {
   const currentUser = useAppStore((state) => state.currentUser)
-  const token = useAppStore((state) => state.token)
+  const restaurant = useAppStore((state) => state.restaurant)
   const level = roleLevelOf(currentUser)
-  const [restaurantName, setRestaurantName] = useState("My Restaurant")
-
-  useEffect(() => {
-    if (!token || !currentUser?.restaurantId) return
-    fetch(`http://127.0.0.1:8000/api/restaurants/${currentUser.restaurantId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => { if (data?.name) setRestaurantName(data.name) })
-      .catch(() => {})
-  }, [token, currentUser?.restaurantId])
 
   const visibleItems = items.filter((item) => {
     const maxLevel = maxLevelForPath(item.url)
@@ -74,14 +63,20 @@ export function AppSidebar() {
     return level <= maxLevel
   })
 
+  const restaurantName = restaurant?.name || "Overcaffeinated"
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-              <div className="bg-primary flex aspect-square size-8 items-center justify-center rounded-lg text-primary-foreground">
-                <Coffee className="size-4" />
+              <div className="bg-primary flex aspect-square size-8 items-center justify-center rounded-lg text-primary-foreground overflow-hidden">
+                {restaurant?.logoUrl ? (
+                  <img src={restaurant.logoUrl} alt={restaurantName} className="w-full h-full object-cover" />
+                ) : (
+                  <Coffee className="size-4" />
+                )}
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{restaurantName}</span>

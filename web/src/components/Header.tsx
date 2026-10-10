@@ -56,7 +56,7 @@ export function Header() {
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [isLogoutDrawerOpen, setIsLogoutDrawerOpen] = useState(false);
   useEffect(() => {
-    
+    refreshCurrentUser();
   }, [refreshCurrentUser]);
 
   useEffect(() => {
