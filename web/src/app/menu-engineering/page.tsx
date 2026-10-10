@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, ReferenceLine, LabelList } from "recharts";
 import { Star, HelpCircle, TrendingUp, AlertTriangle } from "lucide-react";
 
 // Mock Menu Items
@@ -32,10 +32,10 @@ const getMatrixCategory = (volume: number, marginPercent: number) => {
 };
 
 const CATEGORY_UI = {
-  STAR: { label: "Star", color: "bg-green-500", icon: <Star className="w-4 h-4 mr-1" />, desc: "High Margin, High Sales", advice: "Maintain strict quality control. Highly profitable and popular. Promote heavily." },
-  PUZZLE: { label: "Puzzle", color: "bg-blue-500", icon: <HelpCircle className="w-4 h-4 mr-1" />, desc: "High Margin, Low Sales", advice: "Highly profitable but hard to sell. Decrease price slightly, rename, or push via suggestive selling." },
-  PLOW_HORSE: { label: "Plow Horse", color: "bg-amber-500", icon: <TrendingUp className="w-4 h-4 mr-1" />, desc: "Low Margin, High Sales", advice: "Popular but low margin. Increase price slightly, or decrease portion size/ingredient cost carefully." },
-  DOG: { label: "Dog", color: "bg-red-500", icon: <AlertTriangle className="w-4 h-4 mr-1" />, desc: "Low Margin, Low Sales", advice: "Unpopular and unprofitable. Consider removing from menu or reinventing completely." }
+  STAR: { label: "High Profit, High Popularity", color: "bg-green-500", icon: <Star className="w-4 h-4 mr-1" />, desc: "High Margin, High Sales", advice: "Maintain strict quality control. Highly profitable and popular. Promote heavily." },
+  PUZZLE: { label: "High Profit, Low Popularity", color: "bg-blue-500", icon: <HelpCircle className="w-4 h-4 mr-1" />, desc: "High Margin, Low Sales", advice: "Highly profitable but hard to sell. Decrease price slightly, rename, or push via suggestive selling." },
+  PLOW_HORSE: { label: "Low Profit, High Popularity", color: "bg-amber-500", icon: <TrendingUp className="w-4 h-4 mr-1" />, desc: "Low Margin, High Sales", advice: "Popular but low margin. Increase price slightly, or decrease portion size/ingredient cost carefully." },
+  DOG: { label: "Low Profit, Low Popularity", color: "bg-red-500", icon: <AlertTriangle className="w-4 h-4 mr-1" />, desc: "Low Margin, Low Sales", advice: "Unpopular and unprofitable. Consider removing from menu or reinventing completely." }
 };
 
 export default function MenuEngineeringPage() {
@@ -104,14 +104,14 @@ export default function MenuEngineeringPage() {
             <div className="h-[450px] w-full relative">
               
               {/* Quadrant Labels Background */}
-              <div className="absolute inset-0 z-0 flex flex-col p-[20px] pointer-events-none opacity-10">
+              <div className="absolute inset-0 z-0 flex flex-col p-[20px] pointer-events-none opacity-[0.08] text-center leading-tight">
                 <div className="flex-1 flex">
-                  <div className="flex-1 border-r border-b border-foreground flex items-center justify-center font-bold text-4xl">PUZZLE</div>
-                  <div className="flex-1 border-b border-foreground flex items-center justify-center font-bold text-4xl">STAR</div>
+                  <div className="flex-1 border-r border-b border-foreground flex flex-col items-center justify-center font-bold text-2xl lg:text-3xl"><span>High Profit</span><span className="text-xl lg:text-2xl font-semibold opacity-75">Low Popularity</span></div>
+                  <div className="flex-1 border-b border-foreground flex flex-col items-center justify-center font-bold text-2xl lg:text-3xl"><span>High Profit</span><span className="text-xl lg:text-2xl font-semibold opacity-75">High Popularity</span></div>
                 </div>
                 <div className="flex-1 flex">
-                  <div className="flex-1 border-r border-foreground flex items-center justify-center font-bold text-4xl">DOG</div>
-                  <div className="flex-1 border-foreground flex items-center justify-center font-bold text-4xl">PLOW HORSE</div>
+                  <div className="flex-1 border-r border-foreground flex flex-col items-center justify-center font-bold text-2xl lg:text-3xl"><span>Low Profit</span><span className="text-xl lg:text-2xl font-semibold opacity-75">Low Popularity</span></div>
+                  <div className="flex-1 border-foreground flex flex-col items-center justify-center font-bold text-2xl lg:text-3xl"><span>Low Profit</span><span className="text-xl lg:text-2xl font-semibold opacity-75">High Popularity</span></div>
                 </div>
               </div>
 
@@ -128,10 +128,11 @@ export default function MenuEngineeringPage() {
                     setSimPrice(e.payload.retailPrice);
                     setSimCost(e.payload.bomCost);
                   }}>
+                    <LabelList dataKey="name" position="top" offset={10} style={{ fontSize: '11px', fontWeight: 600, fill: 'hsl(var(--foreground))' }} />
                     {processedMenu.map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
-                        fill={entry.id === selectedDishId ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))"} 
+                        fill={entry.id === selectedDishId ? "hsl(var(--primary))" : "hsl(var(--foreground))"} 
                         className={entry.id === selectedDishId ? "stroke-background stroke-[3px]" : "cursor-pointer transition-colors hover:fill-primary"}
                         r={entry.id === selectedDishId ? 10 : 7}
                       />

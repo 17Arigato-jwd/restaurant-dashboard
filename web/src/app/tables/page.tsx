@@ -22,21 +22,17 @@ export default function TablesPage() {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [waStatus, setWaStatus] = useState<"idle" | "loading" | "success">("idle");
+  const [mounted, setMounted] = useState(false);
   
   useEffect(() => {
+    setMounted(true);
     setCurrentTime(Date.now());
     const interval = setInterval(() => setCurrentTime(Date.now()), 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // Force re-render every minute for timers
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(Date.now()), 60000);
-    return () => clearInterval(timer);
-  }, []);
-
   const getElapsedTime = (timestamp?: number) => {
-    if (!timestamp) return "";
+    if (!timestamp || !mounted) return "";
     const mins = Math.floor((currentTime - timestamp) / 60000);
     return `${mins}m`;
   };

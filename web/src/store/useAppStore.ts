@@ -87,9 +87,9 @@ interface AppState {
 
 const initialTables: Table[] = [
   { id: 'T1', name: 'T-01', capacity: 2, state: 'available', orders: [] },
-  { id: 'T2', name: 'T-02', capacity: 2, state: 'seated', seatedAt: 1700000000000 - 300000, orders: [], waiter: 'Rahul' },
-  { id: 'T3', name: 'T-03', capacity: 4, state: 'ordered', seatedAt: 1700000000000 - 1500000, orders: [{ id: '1', name: 'Butter Chicken', price: 340, qty: 1 }, { id: '2', name: 'Garlic Naan', price: 60, qty: 3 }], waiter: 'Amit' },
-  { id: 'T4', name: 'T-04', capacity: 4, state: 'billed', seatedAt: 1700000000000 - 3600000, orders: [{ id: '3', name: 'Paneer Tikka', price: 280, qty: 1 }], waiter: 'Amit' },
+  { id: 'T2', name: 'T-02', capacity: 2, state: 'seated', seatedAt: Date.now() - 300000, orders: [], waiter: 'Rahul' },
+  { id: 'T3', name: 'T-03', capacity: 4, state: 'ordered', seatedAt: Date.now() - 1500000, orders: [{ id: '1', name: 'Butter Chicken', price: 340, qty: 1 }, { id: '2', name: 'Garlic Naan', price: 60, qty: 3 }], waiter: 'Amit' },
+  { id: 'T4', name: 'T-04', capacity: 4, state: 'billed', seatedAt: Date.now() - 3600000, orders: [{ id: '3', name: 'Paneer Tikka', price: 280, qty: 1 }], waiter: 'Amit' },
   { id: 'T5', name: 'T-05', capacity: 6, state: 'available', orders: [] },
   { id: 'T6', name: 'T-06', capacity: 6, state: 'available', orders: [] },
   { id: 'T7', name: 'T-07', capacity: 2, state: 'available', orders: [] },
@@ -166,7 +166,7 @@ export const useAppStore = create<AppState>()(
             return {
               ...t,
               state: newState,
-              seatedAt: (newState === 'seated' && t.state === 'available') ? 1700000000000 : t.seatedAt
+              seatedAt: (newState === 'seated' && t.state === 'available') ? Date.now() : t.seatedAt
             };
           }
           return t;

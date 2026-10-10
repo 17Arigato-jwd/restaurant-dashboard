@@ -24,7 +24,7 @@ interface KOT {
   createdAt: number;
 }
 
-const DUMMY_KOTS: KOT[] = [
+const getDummyKots = (): KOT[] => [
   {
     id: "KOT-101",
     tableId: "T-02",
@@ -55,11 +55,15 @@ const DUMMY_KOTS: KOT[] = [
 ];
 
 export default function KDSPage() {
-  const [activeKots, setActiveKots] = useState<KOT[]>(DUMMY_KOTS);
-  const [currentTime, setCurrentTime] = useState(Date.now());
+  const [activeKots, setActiveKots] = useState<KOT[]>([]);
+  const [currentTime, setCurrentTime] = useState(0);
   const [activeFilter, setActiveFilter] = useState<Station | 'all'>('all');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setActiveKots(getDummyKots());
+    setCurrentTime(Date.now());
+    setMounted(true);
     const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -74,6 +78,7 @@ export default function KDSPage() {
   };
 
   const getSlaStatus = (createdAt: number) => {
+    if (!mounted) return { color: "bg-green-100 text-green-800 border-green-300", icon: <CheckCircle2 className="w-4 h-4" /> };
     const elapsedMins = (currentTime - createdAt) / 60000;
     if (elapsedMins < 10) return { color: "bg-green-100 text-green-800 border-green-300", icon: <CheckCircle2 className="w-4 h-4" /> };
     if (elapsedMins < 18) return { color: "bg-amber-100 text-amber-800 border-amber-300", icon: <AlertTriangle className="w-4 h-4" /> };
@@ -81,6 +86,7 @@ export default function KDSPage() {
   };
 
   const formatTime = (createdAt: number) => {
+    if (!mounted) return "--:--";
     const elapsedSecs = Math.floor((currentTime - createdAt) / 1000);
     const m = Math.floor(elapsedSecs / 60);
     const s = elapsedSecs % 60;
