@@ -14,6 +14,7 @@ export interface User {
   roleId: string;
   avatarUrl?: string;
   status: 'active' | 'pending';
+  restaurantId?: string;
 }
 
 let roles: Role[] = [
@@ -24,7 +25,7 @@ let roles: Role[] = [
 ];
 
 let users: User[] = [
-  { id: 'u1', name: 'Restaurant Admin', email: 'admin@restaurant.com', roleId: 'r1', status: 'active', avatarUrl: '' }
+  { id: 'u1', name: 'Restaurant Admin', email: 'admin@restaurant.com', roleId: 'r1', status: 'active', avatarUrl: '', restaurantId: 'rest-1' }
 ];
 
 export const db = {

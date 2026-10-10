@@ -349,8 +349,8 @@ export default function DashboardPage() {
                       <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No delayed orders!</td>
                     </tr>
                   ) : (
-                    filteredOrders.map(order => (
-                      <tr key={order.id} className="hover:bg-muted/30 transition-colors">
+                    filteredOrders.map((order, index) => (
+                      <tr key={`${order.id}-${index}`} className="hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3 font-medium">{order.id}</td>
                         <td className="px-4 py-3">{order.channel}</td>
                         <td className="px-4 py-3">{order.table}</td>

@@ -54,7 +54,11 @@ const items = [
 
 export function AppSidebar() {
   const currentUser = useAppStore((state) => state.currentUser)
+<<<<<<< HEAD
   const token = useAppStore((state) => state.token)
+=======
+  const restaurant = useAppStore((state) => state.restaurant)
+>>>>>>> 5e263da (feat: enhance restaurant settings and sidebar with dynamic restaurant data)
   const level = roleLevelOf(currentUser)
   const [restaurantName, setRestaurantName] = useState("My Restaurant")
 
@@ -74,14 +78,20 @@ export function AppSidebar() {
     return level <= maxLevel
   })
 
+  const restaurantName = restaurant?.name || "Overcaffeinated"
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-              <div className="bg-primary flex aspect-square size-8 items-center justify-center rounded-lg text-primary-foreground">
-                <Coffee className="size-4" />
+              <div className="bg-primary flex aspect-square size-8 items-center justify-center rounded-lg text-primary-foreground overflow-hidden">
+                {restaurant?.logoUrl ? (
+                  <img src={restaurant.logoUrl} alt={restaurantName} className="w-full h-full object-cover" />
+                ) : (
+                  <Coffee className="size-4" />
+                )}
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{restaurantName}</span>

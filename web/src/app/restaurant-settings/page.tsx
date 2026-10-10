@@ -69,13 +69,15 @@ export default function SettingsPage() {
         const data = await res.json();
         if (cancelled || !data?.settings) return;
         const stored = data.settings as Partial<RestaurantSettings>;
-        setSettings({
+        const newSettings = {
           ...DEFAULT_SETTINGS,
           ...stored,
           taxes: { ...DEFAULT_SETTINGS.taxes, ...(stored.taxes || {}) },
           notifications: { ...DEFAULT_SETTINGS.notifications, ...(stored.notifications || {}) },
           hardware: stored.hardware?.length ? stored.hardware : DEFAULT_SETTINGS.hardware,
-        });
+        };
+        setSettings(newSettings);
+        useAppStore.getState().setRestaurant({ name: newSettings.name, logoUrl: newSettings.logoUrl });
       } catch {
         // Backend unavailable: keep local defaults.
       }
@@ -107,6 +109,7 @@ export default function SettingsPage() {
         } catch {}
         throw new Error(message);
       }
+      useAppStore.getState().setRestaurant({ name: settings.name, logoUrl: settings.logoUrl });
       toast.add({ type: "success", title: "Saved", description: "Restaurant settings saved permanently." });
     } catch (error: unknown) {
       toast.add({

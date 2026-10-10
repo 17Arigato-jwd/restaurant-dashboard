@@ -54,6 +54,9 @@ interface AppState {
   setSession: (token: string, role: string, userId: string, user?: SessionUser) => void;
   logout: () => void;
 
+  restaurant: { name: string; logoUrl?: string } | null;
+  setRestaurant: (restaurant: { name: string; logoUrl?: string }) => void;
+
   isManagerAuthorized: boolean;
   setManagerAuthorized: (status: boolean) => void;
 
@@ -110,6 +113,18 @@ export const useAppStore = create<AppState>()(
           if (res.ok) {
             const data = await res.json();
             set({ currentUser: data, role: data.roleId });
+            
+            if (data.restaurantId) {
+              const rRes = await fetch(`/api/restaurants/${data.restaurantId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              if (rRes.ok) {
+                const rData = await rRes.json();
+                if (rData?.settings) {
+                  set({ restaurant: { name: rData.settings.name, logoUrl: rData.settings.logoUrl } });
+                }
+              }
+            }
           }
         } catch (e) { console.error(e); }
       },
@@ -120,6 +135,9 @@ export const useAppStore = create<AppState>()(
         if (!user) get().refreshCurrentUser();
       },
       logout: () => set({ token: null, role: null, currentUser: null, isManagerAuthorized: false, mustChangePassword: false }),
+
+      restaurant: null,
+      setRestaurant: (restaurant) => set({ restaurant }),
 
       isManagerAuthorized: false,
       setManagerAuthorized: (status) => set({ isManagerAuthorized: status }),
