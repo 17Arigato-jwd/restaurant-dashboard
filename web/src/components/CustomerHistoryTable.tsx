@@ -20,7 +20,7 @@ import {
   type RowSelectionState,
   type SortingState,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, CalendarClock } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
 
 import * as React from "react"
 import { DatePickerWithRange } from "@/components/DatePicker";

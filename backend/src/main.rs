@@ -1641,13 +1641,26 @@ async fn get_delivery_tracking(
     .await
     .unwrap_or_default();
 
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs_f64();
+    let cycle = 40.0;
+
     let mut deliveries = Vec::new();
-    for (id, d_lat, d_lng, c_lat, c_lng) in rows {
+    for (id, _d_lat, _d_lng, c_lat, c_lng) in rows {
+        let offset = id.as_bytes().iter().map(|&b| b as f64).sum::<f64>();
+        let phase = ((now + offset) % cycle) / cycle;
+        let progress = if phase < 0.5 { phase * 2.0 } else { 2.0 - phase * 2.0 };
+
+        let start = restaurant_loc;
+        let end = [c_lat, c_lng];
+        
+        let current_lat = start[0] + (end[0] - start[0]) * progress;
+        let current_lng = start[1] + (end[1] - start[1]) * progress;
+
         deliveries.push(DeliveryData {
             id,
             customer: [c_lat, c_lng],
-            driver: [d_lat, d_lng],
-            route: vec![restaurant_loc, [c_lat, c_lng]],
+            driver: [current_lat, current_lng],
+            route: vec![start, end],
         });
     }
 

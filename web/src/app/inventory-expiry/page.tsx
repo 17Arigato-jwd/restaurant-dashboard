@@ -10,7 +10,6 @@ import { authHeaders } from "@/lib/api";
 import { useAppStore } from "@/store/useAppStore";
 import { roleLevelOf } from "@/lib/permissions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { format, differenceInDays } from "date-fns";
 
 interface InventoryItem {
@@ -251,7 +250,7 @@ export default function InventoryExpiryPage() {
                     )}
                   </td>
                 </tr>
-              ) : items.map((item, index) => {
+              ) : items.map((item) => {
                 const status = getExpiryStatus(item.expiryDate);
                 const isExpired = differenceInDays(new Date(item.expiryDate), new Date()) < 0;
                 return (

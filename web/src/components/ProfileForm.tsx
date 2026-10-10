@@ -21,6 +21,7 @@ export function ProfileForm() {
 
   useEffect(() => {
     if (currentUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(currentUser.name);
       setEmail(currentUser.email);
       setAvatarUrl(currentUser.avatarUrl || "");
@@ -41,7 +42,7 @@ export function ProfileForm() {
       } else {
         throw new Error("Failed to update");
       }
-    } catch (e) {
+    } catch {
       toast.add({ type: "error", title: "Error", description: "Could not save profile details." });
     }
   };

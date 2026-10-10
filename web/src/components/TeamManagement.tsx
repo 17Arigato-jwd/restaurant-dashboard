@@ -42,19 +42,10 @@ export function TeamManagement() {
   const { currentUser } = useAppStore();
   const currentLevel = roleLevelOf(currentUser);
 
-  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
-
   const fetchUsers = async () => {
     const res = await fetch('/api/team', { headers: authHeaders() });
     if (res.ok) {
       setUsers(await res.json());
-    }
-  };
-
-  const fetchRoles = async () => {
-    const res = await fetch('/api/roles', { headers: authHeaders() });
-    if (res.ok) {
-      setRoles(await res.json());
     }
   };
 
@@ -92,26 +83,6 @@ export function TeamManagement() {
     }
   };
 
-  const handleUpdateAvatar = async (id: string, file: File) => {
-    // In a real app, upload file to S3 and get URL. Here we mock it.
-    const mockUrl = URL.createObjectURL(file);
-    const res = await fetch(`/api/team/${id}`, {
-      method: 'PUT',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ avatarUrl: mockUrl })
-    });
-
-    if (res.ok) {
-      toast.add({ type: "success", title: "Avatar Updated", description: "Team member avatar updated successfully." });
-      fetchUsers();
-    } else {
-      let message = "Action failed.";
-      try {
-        message = (await res.json()).error || message;
-      } catch {}
-      toast.add({ type: "error", title: "Action Failed", description: message });
-    }
-  };
 
   const getRoleIcon = (level: number) => {
     if (level === 1) return <Crown className="size-2.5 text-black" />;
@@ -143,7 +114,6 @@ export function TeamManagement() {
       {users.map((user) => {
         const isSelf = user.id === currentUser?.id;
         const canEdit = isSelf || canManageLevel(currentLevel, user.role?.level ?? null);
-        const isExpanded = expandedUserId === user.id;
 
         return (
           <div key={user.id} className={`p-4 border-2 border-border rounded-base flex flex-col justify-between bg-background ${user.status === 'pending' ? 'opacity-60' : ''}`}>

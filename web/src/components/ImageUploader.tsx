@@ -73,7 +73,7 @@ export function ImageUploader({
       }
       setState("done");
       toast.add({ type: "success", title: "Upload Complete", description: `${selectedFile.name} uploaded successfully.` });
-    } catch (err) {
+    } catch {
       setState("error");
       setErrorMessage("Upload failed");
     }
@@ -105,6 +105,7 @@ export function ImageUploader({
           {state === "uploading" && <Spinner />}
           {state === "error" && <AlertCircleIcon className="w-5 h-5" />}
           {state === "done" && preview && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={preview} alt="Uploaded preview" className="object-cover w-full h-full" />
           )}
           {state === "done" && !preview && <ImageIcon className="w-5 h-5" />}

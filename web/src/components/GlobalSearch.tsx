@@ -1,11 +1,7 @@
 "use client"
 
 import {
-  Calculator,
-  Calendar,
-  CreditCard,
   Settings,
-  Smile,
   User,
   Search,
   LayoutDashboard,

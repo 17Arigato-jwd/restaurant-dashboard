@@ -1,18 +1,14 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "@/components/ui/toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
-import { User, Settings, Users, Save, Mail, UserPlus, Trash2, Crown, Shield, Clock } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage, AvatarBadge } from "@/components/ui/avatar";
-import { ImageUploader } from "@/components/ImageUploader";
+import { User, Settings, Users, Save } from "lucide-react";
 import { TeamManagement } from "@/components/TeamManagement";
 import { ProfileForm } from "@/components/ProfileForm";
 import { useAppStore } from "@/store/useAppStore";

@@ -11,7 +11,8 @@ import { ImageUploader } from "@/components/ImageUploader";
 import { Save, Trash2, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";import { authHeaders } from "@/lib/api";
-import { ChangePasswordCard } from "@/components/ChangePasswordCard";
+import { ChangePasswordCard } from "@/components/ChangePasswordCard";
+
 
 export function EditUserForm({ userId }: { userId: string }) {
   const router = useRouter();
@@ -64,7 +65,7 @@ export function EditUserForm({ userId }: { userId: string }) {
       } else {
         throw new Error("Failed to update");
       }
-    } catch (e) {
+    } catch {
       toast.add({ type: "error", title: "Error", description: "Could not save user details." });
     }
   };

@@ -69,7 +69,6 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchInventory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleActualStockChange = (id: string, value: string) => {

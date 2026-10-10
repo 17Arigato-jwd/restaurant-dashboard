@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import {
   LayoutDashboard,
   Grid,
@@ -73,6 +72,7 @@ export function AppSidebar() {
             <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
               <div className="bg-primary flex aspect-square size-8 items-center justify-center rounded-lg text-primary-foreground overflow-hidden">
                 {restaurant?.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={restaurant.logoUrl} alt={restaurantName} className="w-full h-full object-cover" />
                 ) : (
                   <Coffee className="size-4" />

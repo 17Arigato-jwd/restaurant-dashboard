@@ -8,18 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogMedia } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/toast";
-import { useAppStore } from "@/store/useAppStore";
 import { authHeaders } from "@/lib/api";
 
 export function RolesManagement() {
-  const [roles, setRoles] = useState<any[]>([]);
+  const [roles, setRoles] = useState<{ id: string; name: string; level: number }[]>([]);
   const [newRoleName, setNewRoleName] = useState("");
-  const { role: currentUserRole } = useAppStore();
-  const currentRoleId = currentUserRole || 'r1';
-
-  useEffect(() => {
-    fetchRoles();
-  }, []);
 
   const fetchRoles = async () => {
     const res = await fetch('/api/roles', { headers: authHeaders() });
@@ -27,6 +20,11 @@ export function RolesManagement() {
       setRoles(await res.json());
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchRoles();
+  }, []);
 
   const handleCreateRole = async () => {
     if (!newRoleName) return;
