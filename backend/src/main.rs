@@ -1858,6 +1858,14 @@ async fn update_table(
     if let Some(new_state) = payload.state.as_deref() {
         match new_state {
             "available" => {
+                // Freeing a table must also remove its open orders: KDS tickets are
+                // derived purely from orders, so leaving them behind would keep
+                // timers running on a table nobody is seated at. (Settle Bill sends
+                // clear_orders explicitly; this covers Clear Table as well.)
+                let _ = sqlx::query("DELETE FROM orders WHERE table_id = ?")
+                    .bind(&id)
+                    .execute(&state.db)
+                    .await;
                 let _ = sqlx::query(
                     "UPDATE tables SET state = 'available', seated_at = NULL, waiter = NULL WHERE id = ?",
                 )

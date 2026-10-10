@@ -192,6 +192,9 @@ export const useAppStore = create<AppState>()(
             return {
               ...t,
               state: newState,
+              // Clearing a table empties it: drop local orders too so KDS tickets
+              // vanish immediately instead of waiting for the next poll.
+              orders: newState === 'available' ? [] : t.orders,
               seatedAt: newState === 'seated' && !t.seatedAt ? Date.now()
                 : newState === 'available' ? undefined
                 : t.seatedAt,
