@@ -54,23 +54,8 @@ const items = [
 
 export function AppSidebar() {
   const currentUser = useAppStore((state) => state.currentUser)
-<<<<<<< HEAD
-  const token = useAppStore((state) => state.token)
-=======
   const restaurant = useAppStore((state) => state.restaurant)
->>>>>>> 5e263da (feat: enhance restaurant settings and sidebar with dynamic restaurant data)
   const level = roleLevelOf(currentUser)
-  const [restaurantName, setRestaurantName] = useState("My Restaurant")
-
-  useEffect(() => {
-    if (!token || !currentUser?.restaurantId) return
-    fetch(`http://127.0.0.1:8000/api/restaurants/${currentUser.restaurantId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => { if (data?.name) setRestaurantName(data.name) })
-      .catch(() => {})
-  }, [token, currentUser?.restaurantId])
 
   const visibleItems = items.filter((item) => {
     const maxLevel = maxLevelForPath(item.url)
